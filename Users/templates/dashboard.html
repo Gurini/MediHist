@@ -1,0 +1,19 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Dashboard - Medihist{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="color: #2c3e50; margin-bottom: 1rem;">
+        Welcome, {{ user.get_full_name|default:user.username }}!
+    </h2>
+    <p style="color: #7f8c8d; margin-bottom: 2rem;">
+        User Type: <strong>{{ user.get_user_type_display }}</strong>
+    </p>
+    
+    <div style="background: #ecf0f1; padding: 1.5rem; border-radius: 8px; margin-top: 1rem;">
+        <h3 style="color: #34495e; margin-bottom: 1rem;">Quick Stats</h3>
+        <p>This is your main dashboard. More features will be added here.</p>
+    </div>
+</div>
+{% endblock %}

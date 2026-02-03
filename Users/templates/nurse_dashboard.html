@@ -1,0 +1,44 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Nurse Dashboard - Medihist{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="color: #27ae60; margin-bottom: 1rem;">
+        👩‍⚕️ Nurse {{ user.get_full_name|default:user.username }}
+    </h2>
+    <p style="color: #7f8c8d; margin-bottom: 2rem;">
+        {{ profile.get_specialization_display }} | License: {{ profile.license_number }}
+    </p>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 8px; text-align: center;">
+            <h3 style="color: #27ae60; font-size: 2rem; margin-bottom: 0.5rem;">{{ profile.years_of_experience }}</h3>
+            <p style="color: #555;">Years of Experience</p>
+        </div>
+        
+        <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 8px; text-align: center;">
+            <h3 style="color: #2980b9; font-size: 1.2rem; margin-bottom: 0.5rem;">{{ profile.get_shift_preference_display }}</h3>
+            <p style="color: #555;">Shift Preference</p>
+        </div>
+        
+        <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 8px; text-align: center;">
+            <h3 style="color: #27ae60; font-size: 1.5rem; margin-bottom: 0.5rem;">
+                {% if profile.is_available %}Available{% else %}Not Available{% endif %}
+            </h3>
+            <p style="color: #555;">Current Status</p>
+        </div>
+    </div>
+    
+    <div style="background: #ecf0f1; padding: 1.5rem; border-radius: 8px;">
+        <h3 style="color: #34495e; margin-bottom: 1rem;">Professional Information</h3>
+        <p><strong>Qualification:</strong> {{ profile.qualification }}</p>
+        {% if profile.hospital_affiliation %}
+        <p><strong>Hospital Affiliation:</strong> {{ profile.hospital_affiliation }}</p>
+        {% endif %}
+        {% if profile.bio %}
+        <p style="margin-top: 1rem;"><strong>Bio:</strong> {{ profile.bio }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

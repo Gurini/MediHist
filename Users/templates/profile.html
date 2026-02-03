@@ -1,0 +1,74 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Profile - Medihist{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="color: #2c3e50; margin-bottom: 2rem;">My Profile</h2>
+    
+    <div style="background: #ecf0f1; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+        <h3 style="color: #34495e; margin-bottom: 1rem;">Personal Information</h3>
+        <p><strong>Username:</strong> {{ user.username }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Full Name:</strong> {{ user.get_full_name|default:"Not set" }}</p>
+        <p><strong>User Type:</strong> {{ user.get_user_type_display }}</p>
+        {% if user.phone_number %}
+        <p><strong>Phone:</strong> {{ user.phone_number }}</p>
+        {% endif %}
+        {% if user.date_of_birth %}
+        <p><strong>Date of Birth:</strong> {{ user.date_of_birth }}</p>
+        {% endif %}
+        <p><strong>Member Since:</strong> {{ user.date_joined|date:"F d, Y" }}</p>
+    </div>
+    
+    {% if user.user_type == 'DOCTOR' and profile %}
+    <div style="background: #e8f4f8; padding: 1.5rem; border-radius: 8px;">
+        <h3 style="color: #2980b9; margin-bottom: 1rem;">Doctor Profile</h3>
+        <p><strong>License Number:</strong> {{ profile.license_number }}</p>
+        <p><strong>Specialization:</strong> {{ profile.get_specialization_display }}</p>
+        <p><strong>Qualification:</strong> {{ profile.qualification }}</p>
+        <p><strong>Years of Experience:</strong> {{ profile.years_of_experience }}</p>
+        {% if profile.hospital_affiliation %}
+        <p><strong>Hospital Affiliation:</strong> {{ profile.hospital_affiliation }}</p>
+        {% endif %}
+        {% if profile.consultation_fee %}
+        <p><strong>Consultation Fee:</strong> ${{ profile.consultation_fee }}</p>
+        {% endif %}
+        <p><strong>Availability Status:</strong> {% if profile.is_available %}Available{% else %}Not Available{% endif %}</p>
+        {% if profile.bio %}
+        <p style="margin-top: 1rem;"><strong>Bio:</strong><br>{{ profile.bio }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% if user.user_type == 'NURSE' and profile %}
+    <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 8px;">
+        <h3 style="color: #27ae60; margin-bottom: 1rem;">Nurse Profile</h3>
+        <p><strong>License Number:</strong> {{ profile.license_number }}</p>
+        <p><strong>Specialization:</strong> {{ profile.get_specialization_display }}</p>
+        <p><strong>Qualification:</strong> {{ profile.qualification }}</p>
+        <p><strong>Years of Experience:</strong> {{ profile.years_of_experience }}</p>
+        {% if profile.hospital_affiliation %}
+        <p><strong>Hospital Affiliation:</strong> {{ profile.hospital_affiliation }}</p>
+        {% endif %}
+        <p><strong>Shift Preference:</strong> {{ profile.get_shift_preference_display }}</p>
+        <p><strong>Availability Status:</strong> {% if profile.is_available %}Available{% else %}Not Available{% endif %}</p>
+        {% if profile.bio %}
+        <p style="margin-top: 1rem;"><strong>Bio:</strong><br>{{ profile.bio }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% if user.user_type == 'ADMIN' and profile %}
+    <div style="background: #f4ecf7; padding: 1.5rem; border-radius: 8px;">
+        <h3 style="color: #8e44ad; margin-bottom: 1rem;">Admin Profile</h3>
+        {% if profile.department %}
+        <p><strong>Department:</strong> {{ profile.department }}</p>
+        {% endif %}
+        {% if profile.role_description %}
+        <p><strong>Role Description:</strong> {{ profile.role_description }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
