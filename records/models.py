@@ -145,7 +145,7 @@ class MedicalHistory(models.Model):
 
 class Diagnosis(models.Model):
     #Diagnosis records for patients
-    SEVERIT_CHOICES = (
+    SEVERITY_CHOICES = (
         ('MILD', 'Mild'),
         ('MODERATE', 'Moderate'),
         ('SEVERE', 'Severe'),
@@ -161,3 +161,100 @@ class Diagnosis(models.Model):
 
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='diagnosis')
     medical_history = models.ForeignKey(MedicalHistory, on_delete=models.CASCADE, related_name="")
+
+    diagnosis_date = models.DateField()
+    condition = models.CharField(max_length=200, help_text="Name of the condition/disease")
+    icd_code = models.CharField(max_length=20, blank=True, help_text="ICD-10 code")
+    severity = models.CharField(max_length=20, choices=SEVERITY_CHOICES, default='MODERATE')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default-'ACTIVE')
+
+    description = models.TextField(help_text="Detailed description of diagnosis")
+    symptoms = models.TextField(blanl=True, help_text="List of symptoms")
+    test_results = models.TextField(blank=True, help_text="Relevant test results")
+
+    treatment_plan = models.TextField(blank=True, help_text="Recommended treatment plan")
+    follow_up_date = models.DateField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+
+    #System
+    diagnosed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="Diagnoses made")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = DateTimeField(uto_now=True)
+
+
+    class Meta:
+        verbose_name = 'Diagnosis'
+        verbose_name_plural = 'Diagnoses'
+        ordering = ['-diagnosis_date', '-created_at']
+        
+    def __str__(self):
+        return f"{self.patient.get_full_name()} - {self.condition} ({self.diagnosis_date})"
+
+
+class Prescription(models.Model):
+    #Prescription record for patients
+    DOSAGE_FREQUENCY_CHOICES = (
+        ('ONCE_DAILY', 'Once Daily'),
+        ('TWICE_DAILY', 'Twice Daily'),
+        ('THREE_TIMES_DAILY', 'Three Times Daily'),
+        ('FOUR_TIMES_DAILY', 'Four Times Daily'),
+        ('EVERY_4_HOURS', 'Every 4 Hours'),
+        ('EVERY_6_HOURS', 'Every 6 Hours'),
+        ('EVERY_8_HOURS', 'Every 8 Hours'),
+        ('EVERY_12_HOURS', 'Every 12 Hours'),
+        ('AS_NEEDED', 'As Needed'),
+        ('WEEKLY', 'Weekly'),
+        ('MONTHLY', 'Monthly'),
+    )
+
+    STATUS_CHOICES = (
+        ('ACTIVE', 'Active'),
+        ('COMPLETED', 'Completed'),
+        ('DISCONTINUED', 'Discontinued'),
+        ('ON_HOLD', 'On Hold'),
+    )
+
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='prescriptions')
+    diagnosis = models.ForeignKey(Diagnosis, on_delete=models.SET_NULL, null=True, blank=True, related_name='prescriptions')
+
+    #Prescription
+    prescription_date = models.DateField()
+    medication_name = models.CharField(max_length=200)
+    dosage = models.CharField(max_length=100, help_text="e.g., 500mg, 10ml")
+    frequency = models.CharField(max_length=30, choices=DOSAGE_FREQUENCY_CHOICES)
+    route = models.CharField(max_length=50, help_text="e.g., Oral, Intravenous, Topical")
+
+    duration = models.CharField(max_length=100, help_text="e.g., 7 days, 2 weeks, 1 month")
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+
+    quantity = models.CharField(max_length=50, blank=True, help_text="Total quantity to be dispensed")
+    refills = models.IntegerField(default=0, help_text="Number of refills allowed")
+
+    #Additional instruction
+    instructions = models.TextField(help_text="Detailed instructions for patient")
+    special_instructions = models.TextField(blank=True ,help_text="Any special instructions or warnings")
+
+    #status
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACTIVE')
+    notes = models.TextField(blank=True)
+
+    prescribed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='prescriptions_made')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+    class Meta:
+        verbose_name = 'Prescription'
+        verbose_name_plural = 'Prescriptions'
+        ordering = ['-prescription_date', '-created_at']
+
+    def __str_(self):
+        return f"{self.patient.get_full_name()} - {self.medication_name} ({self.prescription_date})"
+    
+    def is_expired(self):
+        #check if prescripion has expired
+        if self.end_date:
+            from datetime import date
+            return date.today > self.end_date
+        return False
