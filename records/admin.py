@@ -86,3 +86,38 @@ class DiagnosisAdmin(admin.ModelAdmin):
         if not obj.pk:
             obj.diagnosed_by = request.user
         super().save_model(request, obj, form, change)
+
+admin.register(Prescription)
+class PrescriptionAdmin(admin.ModelAdmin):
+    list_display = ['patient', 'medication_name', 'dosage', 'frequency', 'prescription_date', 'status', 'prescribe_by', 'created_at']
+    list_filter = ['status', 'frequency', 'prescription_date', 'created_at']
+    search_fields = ['patient__patient_id', 'patient__first_name', 'patient__last_name', 'medication_name']
+    readonly_fields = ['prescribed_by', 'created_by', 'updated_by']
+
+    fieldset = (
+        ('Patient & Diagnosis', {
+            'fields': ('patient', 'diagnosis', 'prescription_date')
+        }),
+        ('Medication Details', {
+            'fields': ('medication_name', 'dosage', 'frequency', 'route')
+        }),
+        ('Duration & Quantity', {
+            'fields': ('duration', 'start_date', 'end_date', 'quantity', 'refills')
+        }),
+        ('Instructions', {
+            'fields': ('instructions', 'special_instructions')
+        }),
+        ('Status & Notes', {
+            'fields': ('status', 'notes')
+        }),
+        ('System Information', {
+            'fields': ('prescribed_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def save_model(self, request, obj, form, change):
+        #Set prescribed_by to current user if it is not already set
+        if not obj.pk:
+            obj.prescribed_by = request.user
+        super().save_model(request, obj, form, change)
