@@ -1,0 +1,133 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Add Prescription - {{ patient.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 2rem auto;">
+    <h2 style="color: #27ae60; margin-bottom: 1rem;">Add Prescription</h2>
+    <p style="color: #7f8c8d; margin-bottom: 2rem;">Patient: <strong>{{ patient.get_full_name }}</strong> ({{ patient.patient_id }})</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        {% if diagnoses %}
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Link to Diagnosis (Optional)</label>
+            <select name="diagnosis" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="">-- Select Diagnosis --</option>
+                {% for diagnosis in diagnoses %}
+                <option value="{{ diagnosis.id }}">{{ diagnosis.condition }} ({{ diagnosis.diagnosis_date }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Medication Name *</label>
+                <input type="text" name="medication_name" required placeholder="e.g., Metformin"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Prescription Date *</label>
+                <input type="date" name="prescription_date" required value="{% now 'Y-m-d' %}"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Dosage *</label>
+                <input type="text" name="dosage" required placeholder="e.g., 500mg"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Frequency *</label>
+                <select name="frequency" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="ONCE_DAILY">Once Daily</option>
+                    <option value="TWICE_DAILY" selected>Twice Daily</option>
+                    <option value="THREE_TIMES_DAILY">Three Times Daily</option>
+                    <option value="FOUR_TIMES_DAILY">Four Times Daily</option>
+                    <option value="AS_NEEDED">As Needed</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Route *</label>
+                <input type="text" name="route" required placeholder="e.g., Oral"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Duration *</label>
+                <input type="text" name="duration" required placeholder="e.g., 30 days"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Start Date *</label>
+                <input type="date" name="start_date" required value="{% now 'Y-m-d' %}"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">End Date</label>
+                <input type="date" name="end_date"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Quantity</label>
+                <input type="text" name="quantity" placeholder="e.g., 60 tablets"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Refills</label>
+                <input type="number" name="refills" value="0" min="0"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Instructions *</label>
+            <textarea name="instructions" rows="3" required placeholder="e.g., Take one tablet with meals"
+                      style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+        </div>
+        
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Special Instructions</label>
+            <textarea name="special_instructions" rows="2" placeholder="Any warnings or special instructions"
+                      style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Status *</label>
+                <select name="status" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="ACTIVE" selected>Active</option>
+                    <option value="ON_HOLD">On Hold</option>
+                    <option value="DISCONTINUED">Discontinued</option>
+                    <option value="COMPLETED">Completed</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Additional Notes</label>
+                <textarea name="notes" rows="1"
+                          style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <a href="{% url 'records:patient_detail' patient.patient_id %}" 
+               style="padding: 0.75rem 2rem; background: #95a5a6; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
+                Cancel
+            </a>
+            <button type="submit"
+                    style="padding: 0.75rem 2rem; background: #27ae60; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                Save Prescription
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

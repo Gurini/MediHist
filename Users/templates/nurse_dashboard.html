@@ -11,10 +11,34 @@
         {{ profile.get_specialization_display }} | License: {{ profile.license_number }}
     </p>
     
+    <!-- Quick Actions -->
+    <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+        <a href="{% url 'records:patient_list' %}" 
+           style="padding: 0.75rem 1.5rem; background: #27ae60; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            📋 View All Patients
+        </a>
+    </div>
+    
+    <!-- Statistics Grid -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
         <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 8px; text-align: center;">
+            <h3 style="color: #27ae60; font-size: 2rem; margin-bottom: 0.5rem;">{{ total_patients|default:0 }}</h3>
+            <p style="color: #555;">Total Patients</p>
+        </div>
+        
+        <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 8px; text-align: center;">
+            <h3 style="color: #e74c3c; font-size: 2rem; margin-bottom: 0.5rem;">{{ active_diagnoses|default:0 }}</h3>
+            <p style="color: #555;">Active Diagnoses</p>
+        </div>
+        
+        <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 8px; text-align: center;">
+            <h3 style="color: #27ae60; font-size: 2rem; margin-bottom: 0.5rem;">{{ active_prescriptions|default:0 }}</h3>
+            <p style="color: #555;">Active Prescriptions</p>
+        </div>
+        
+        <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 8px; text-align: center;">
             <h3 style="color: #27ae60; font-size: 2rem; margin-bottom: 0.5rem;">{{ profile.years_of_experience }}</h3>
-            <p style="color: #555;">Years of Experience</p>
+            <p style="color: #555;">Years Experience</p>
         </div>
         
         <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 8px; text-align: center;">
@@ -30,15 +54,49 @@
         </div>
     </div>
     
-    <div style="background: #ecf0f1; padding: 1.5rem; border-radius: 8px;">
+    <!-- Professional Information -->
+    <div style="background: #ecf0f1; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
         <h3 style="color: #34495e; margin-bottom: 1rem;">Professional Information</h3>
         <p><strong>Qualification:</strong> {{ profile.qualification }}</p>
         {% if profile.hospital_affiliation %}
         <p><strong>Hospital Affiliation:</strong> {{ profile.hospital_affiliation }}</p>
         {% endif %}
-        {% if profile.bio %}
-        <p style="margin-top: 1rem;"><strong>Bio:</strong> {{ profile.bio }}</p>
-        {% endif %}
+        <p><strong>Shift Preference:</strong> {{ profile.get_shift_preference_display }}</p>
+        <p><strong>Status:</strong> {% if profile.is_available %}<span style="color: #27ae60;">Available</span>{% else %}<span style="color: #e74c3c;">Not Available</span>{% endif %}</p>
     </div>
+    
+    <!-- Recent Patients -->
+    {% if recent_patients %}
+    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px;">
+        <h3 style="color: #34495e; margin-bottom: 1rem;">Recently Updated Patients</h3>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #ecf0f1;">
+                        <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #bdc3c7;">Patient ID</th>
+                        <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #bdc3c7;">Name</th>
+                        <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #bdc3c7;">Last Updated</th>
+                        <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #bdc3c7;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for patient in recent_patients %}
+                    <tr style="border-bottom: 1px solid #ecf0f1;">
+                        <td style="padding: 0.75rem;">{{ patient.patient_id }}</td>
+                        <td style="padding: 0.75rem;">{{ patient.get_full_name }}</td>
+                        <td style="padding: 0.75rem;">{{ patient.updated_at|date:"M d, Y" }}</td>
+                        <td style="padding: 0.75rem;">
+                            <a href="{% url 'records:patient_detail' patient.patient_id %}" 
+                               style="padding: 0.5rem 1rem; background: #27ae60; color: white; text-decoration: none; border-radius: 4px; font-size: 0.85rem;">
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

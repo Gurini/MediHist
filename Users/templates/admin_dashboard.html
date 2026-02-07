@@ -11,23 +11,103 @@
         System Administrator
     </p>
     
-    <div style="background: #f4ecf7; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
-        <h3 style="color: #8e44ad; margin-bottom: 1rem;">Admin Controls</h3>
-        <p style="margin-bottom: 1rem;">Access administrative features and manage the system.</p>
-        
+    <!-- Quick Actions -->
+    <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+        <a href="{% url 'records:patient_create' %}" 
+           style="padding: 0.75rem 1.5rem; background: #27ae60; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            + Add New Patient
+        </a>
+        <a href="{% url 'records:patient_list' %}" 
+           style="padding: 0.75rem 1.5rem; background: #3498db; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            📋 View All Patients
+        </a>
         <a href="/admin/" 
-           style="display: inline-block; padding: 0.5rem 1.5rem; background: #8e44ad; color: white; text-decoration: none; border-radius: 4px; margin-right: 1rem;">
-            Django Admin Panel
+           style="padding: 0.75rem 1.5rem; background: #8e44ad; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            🔧 Django Admin Panel
         </a>
     </div>
     
-    {% if profile.department %}
-    <div style="background: #ecf0f1; padding: 1.5rem; border-radius: 8px;">
+    <!-- Statistics Overview -->
+    <div style="background: #f4ecf7; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+        <h3 style="color: #8e44ad; margin-bottom: 1.5rem;">System Overview</h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+            <div style="background: white; padding: 1.5rem; border-radius: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <h3 style="color: #3498db; font-size: 2rem; margin-bottom: 0.5rem;">{{ total_patients|default:0 }}</h3>
+                <p style="color: #555; font-weight: bold;">Total Patients</p>
+            </div>
+            
+            <div style="background: white; padding: 1.5rem; border-radius: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <h3 style="color: #2980b9; font-size: 2rem; margin-bottom: 0.5rem;">{{ total_doctors|default:0 }}</h3>
+                <p style="color: #555; font-weight: bold;">Active Doctors</p>
+            </div>
+            
+            <div style="background: white; padding: 1.5rem; border-radius: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <h3 style="color: #27ae60; font-size: 2rem; margin-bottom: 0.5rem;">{{ total_nurses|default:0 }}</h3>
+                <p style="color: #555; font-weight: bold;">Active Nurses</p>
+            </div>
+            
+            <div style="background: white; padding: 1.5rem; border-radius: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <h3 style="color: #e74c3c; font-size: 2rem; margin-bottom: 0.5rem;">{{ total_diagnoses|default:0 }}</h3>
+                <p style="color: #555; font-weight: bold;">Total Diagnoses</p>
+            </div>
+            
+            <div style="background: white; padding: 1.5rem; border-radius: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <h3 style="color: #27ae60; font-size: 2rem; margin-bottom: 0.5rem;">{{ total_prescriptions|default:0 }}</h3>
+                <p style="color: #555; font-weight: bold;">Total Prescriptions</p>
+            </div>
+            
+            <div style="background: white; padding: 1.5rem; border-radius: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <h3 style="color: #3498db; font-size: 2rem; margin-bottom: 0.5rem;">{{ total_medical_histories|default:0 }}</h3>
+                <p style="color: #555; font-weight: bold;">Medical Records</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Profile Information -->
+    {% if profile.department or profile.role_description %}
+    <div style="background: #ecf0f1; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
         <h3 style="color: #34495e; margin-bottom: 1rem;">Profile Information</h3>
+        {% if profile.department %}
         <p><strong>Department:</strong> {{ profile.department }}</p>
-        {% if profile.role_description %}
-        <p style="margin-top: 1rem;"><strong>Role:</strong> {{ profile.role_description }}</p>
         {% endif %}
+        {% if profile.role_description %}
+        <p style="margin-top: 0.5rem;"><strong>Role:</strong> {{ profile.role_description }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Recently Created Patients -->
+    {% if recent_patients %}
+    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px;">
+        <h3 style="color: #34495e; margin-bottom: 1rem;">Recently Created Patients</h3>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #ecf0f1;">
+                        <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #bdc3c7;">Patient ID</th>
+                        <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #bdc3c7;">Name</th>
+                        <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #bdc3c7;">Created At</th>
+                        <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #bdc3c7;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for patient in recent_patients %}
+                    <tr style="border-bottom: 1px solid #ecf0f1;">
+                        <td style="padding: 0.75rem;">{{ patient.patient_id }}</td>
+                        <td style="padding: 0.75rem;">{{ patient.get_full_name }}</td>
+                        <td style="padding: 0.75rem;">{{ patient.created_at|date:"M d, Y" }}</td>
+                        <td style="padding: 0.75rem;">
+                            <a href="{% url 'records:patient_detail' patient.patient_id %}" 
+                               style="padding: 0.5rem 1rem; background: #3498db; color: white; text-decoration: none; border-radius: 4px; font-size: 0.85rem;">
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
     {% endif %}
 </div>
