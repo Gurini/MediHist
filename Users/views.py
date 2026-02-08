@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count, Q
-from datetime import date, timeddelta
+from datetime import date, timedelta
 from .models import User, DoctorProfile, NurseProfile, AdminProfile
 
 # Create your views here.

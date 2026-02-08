@@ -76,7 +76,7 @@ class DiagnosisAdmin(admin.ModelAdmin):
             'fields': ('treatment_plan', 'follow_up_date', 'notes')
         }),
         ('System Information', {
-            'fields': ('diagnosed_by', 'created_at', 'updated_at')
+            'fields': ('diagnosed_by', 'created_at', 'updated_at'),
             'classes': ('collapse',)
         }),
     )

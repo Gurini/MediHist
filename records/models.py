@@ -26,20 +26,20 @@ class Patient(models.Model):
 
     #pATIENTS Basic Info
     first_name = models.CharField(max_length=100)
-    last_name = models.Charfield(max_length=100)
+    last_name = models.CharField(max_length=100)
     date_of_birth = models.DateField()
-    gender = models.Charfield(max_length=1, choices=GENDER_CHOICES)
-    blood_group = models.Charfield(max_length=3, choices=BLOOD_GROUP_CHOICES, blank=True)
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
+    blood_group = models.CharField(max_length=3, choices=BLOOD_GROUP_CHOICES, blank=True)
 
 
     #Contact Info
-    phone_regex = RegexValidators(
+    phone_regex = RegexValidator(
         regex = r'^\+?1?\d{9,15}$',
         message = "Phone number must be entered in the format: '+123456'. Up to 15 digits allowed"
     
     )
     phone_number = models.CharField(validators=[phone_regex], max_length=17)
-    email = models.EmalField(blank=True)
+    email = models.EmailField(blank=True)
     address = models.TextField()
 
     #Emergency contact
@@ -55,7 +55,7 @@ class Patient(models.Model):
     #System
     patiendt_id = models.CharField(max_length=20, unique=True, editable=False)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='patient_created')
-    created_at = models.DateTimeField(auto_add_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
 
@@ -129,7 +129,7 @@ class MedicalHistory(models.Model):
 
 
     def __str__(self):
-        return f{"self.patient.get_full_name() - self.date"}
+        return f"{self.patient.get_full_name() - self.date}"
 
     
     def get_bmi(self):
@@ -166,10 +166,10 @@ class Diagnosis(models.Model):
     condition = models.CharField(max_length=200, help_text="Name of the condition/disease")
     icd_code = models.CharField(max_length=20, blank=True, help_text="ICD-10 code")
     severity = models.CharField(max_length=20, choices=SEVERITY_CHOICES, default='MODERATE')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default-'ACTIVE')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACTIVE')
 
     description = models.TextField(help_text="Detailed description of diagnosis")
-    symptoms = models.TextField(blanl=True, help_text="List of symptoms")
+    symptoms = models.TextField(blank=True, help_text="List of symptoms")
     test_results = models.TextField(blank=True, help_text="Relevant test results")
 
     treatment_plan = models.TextField(blank=True, help_text="Recommended treatment plan")
@@ -179,7 +179,7 @@ class Diagnosis(models.Model):
     #System
     diagnosed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="Diagnoses made")
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = DateTimeField(uto_now=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
     class Meta:
