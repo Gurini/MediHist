@@ -117,7 +117,7 @@ def medical_history_create(request, patient_id):
                 weight = request.POST.get('weight') or None,
                 height = request.POST.get('heigth') or None,
                 physical_examination_request = request.POST.get('physical_examination', ''),
-                doctor_notes = request.POST.get('doctor_notes', '')
+                doctor_notes = request.POST.get('doctor_notes', ''),
             )
             messages.success(request, 'Medical history record created successfully!')
             return redirect('patient_detail', patient_id=patient.patient_id)
@@ -128,4 +128,3 @@ def medical_history_create(request, patient_id):
         'patient': patient,
     }
     return render(request, 'records/medical_history_create.html', context)
-    
