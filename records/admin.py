@@ -12,7 +12,7 @@ class MedicalHistoryInline(admin.TabularInline):
 class DiagnosisInline(admin.TabularInline):
     model = Diagnosis
     extra = 0
-    fields = ['dagnosis_date', 'condtion', 'severity', 'diagnosed_by']
+    fields = ['diagnosis_date', 'condtion', 'severity', 'diagnosed_by']
     readonly_fields = ['diagnosed_by']
     can_delete = False
 
@@ -26,7 +26,7 @@ class PrescriptionInline(admin.TabularInline):
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
     list_display = ['patient_id', 'get_full_name', 'date_of_birth', 'gender', 'blood_group', 'phone_number', 'is_active', 'created_at']
-    list_filter = ['gender', 'blood_grooup', 'is_active', 'created_at']
+    list_filter = ['gender', 'blood_group', 'is_active', 'created_at']
     search_fields = ['patient_id', 'first_name', 'last_name', 'phone_number', 'email']
     readonly_fields = ['patient_id', 'created_by', 'created_at', 'updated_at']
 

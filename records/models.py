@@ -53,7 +53,7 @@ class Patient(models.Model):
     chronic_conditions = models.TextField(blank=True, help_text="List any chronic conditions")
 
     #System
-    patiendt_id = models.CharField(max_length=20, unique=True, editable=False)
+    patient_id = models.CharField(max_length=20, unique=True, editable=False)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='patient_created')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -159,8 +159,8 @@ class Diagnosis(models.Model):
         ('UNDER_OBSERVATION', 'Under Observation'),
     )
 
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='diagnosis')
-    medical_history = models.ForeignKey(MedicalHistory, on_delete=models.CASCADE, related_name="")
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='diagnoses')
+    medical_history = models.ForeignKey(MedicalHistory, on_delete=models.CASCADE, related_name='diagnoses', null=True, blank=True)
 
     diagnosis_date = models.DateField()
     condition = models.CharField(max_length=200, help_text="Name of the condition/disease")
@@ -177,7 +177,7 @@ class Diagnosis(models.Model):
     notes = models.TextField(blank=True)
 
     #System
-    diagnosed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="Diagnoses made")
+    diagnosed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="diagnoses_made")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
