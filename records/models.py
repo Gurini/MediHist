@@ -69,12 +69,12 @@ class Patient(models.Model):
         return f"{self.patient_id} - {self.get_full_name()}"
 
     def get_full_name(self):
-        return f"{self.first_name} - {self.last_name()}"
+        return f"{self.first_name} {self.last_name}"
 
     def get_age(self):
         from datetime import date
         today = date.today()
-        return today.year - self.date_of_birth - (
+        return today.year - self.date_of_birth.year - (
             (today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day)
         )
 
@@ -83,9 +83,13 @@ class Patient(models.Model):
         if not self.patient_id:
             #Get last patients ID and increment it
             last_patient = Patient.objects.all().order_by('id').last()
-            if last_patient:
-                last_id = int(last_patient.patient_id.split('-')[1])
-                new_id = last_id + 1
+            if last_patient and last_patient.patient_id:
+                try: #Extract numeric part of patient_id and increment
+                    last_id = int(last_patient.patient_id.split('-')[1])
+                    new_id = last_id + 1
+                except (IndexError, ValueError):
+                    #if patient_id format is unexpected, fallback to counting total patients
+                    new_id = Patient.objects.count() + 1
             else:
                 new_id = 1
             self.patient_id = f'PT-{new_id:06d}'

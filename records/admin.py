@@ -25,7 +25,7 @@ class PrescriptionInline(admin.TabularInline):
 
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
-    list_display = ['patient_id', 'get_full_name', 'date_of_birth', 'gender', 'blood_group', 'phone_number', 'is_active', 'created_at']
+    list_display = ['patient_id', 'full_name_display', 'date_of_birth', 'gender', 'blood_group', 'phone_number', 'is_active', 'created_at']
     list_filter = ['gender', 'blood_group', 'is_active', 'created_at']
     search_fields = ['patient_id', 'first_name', 'last_name', 'phone_number', 'email']
     readonly_fields = ['patient_id', 'created_by', 'created_at', 'updated_at']
@@ -48,6 +48,10 @@ class PatientAdmin(admin.ModelAdmin):
             'classes': ('collapse')
         }),
     )
+
+    def full_name_display(self, obj):
+        return obj.get_full_name()
+    full_name_display.short_description = 'Name'
 
     def save_model(self, request, obj, form, change):
         #Set recorded_by to current user if not set

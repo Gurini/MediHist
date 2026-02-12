@@ -17,7 +17,7 @@ from .decorators import (
 def patient_list(request):
     #Patients search functionality
     query = request.GET.get('q', '')
-    patients_list = Patients.object.filter(is_active=True)
+    patients_list = Patient.objects.filter(is_active=True)
 
     #Search func proper
     if query:
@@ -30,14 +30,14 @@ def patient_list(request):
         )
     
     #Pagination
-    paginator = Paginator(patients_list=20) #20 patients per page
+    paginator = Paginator(patients_list, 20) #20 patients per page
     page_number = request = request.GET.get('page')
     patients = paginator.get_page(page_number)
 
     context = {
         'patients': patients,
         'query': query,
-        'total_patients': Patients.object.filter(is_active=True).count(),
+        'total_patients': Patient.objects.filter(is_active=True).count(),
     }
     return render(request, 'records/patient_list.html', context)
 

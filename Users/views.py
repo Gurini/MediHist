@@ -42,7 +42,7 @@ def dashboard(request):
             ).select_related('patient')[:5]# we don't want to show the whole thing, just the last 5 patients attended to
 
             #active prescriptions
-            context['active_prescriptions'] = Prescriptions.objects.filter(
+            context['active_prescriptions'] = Prescription.objects.filter(
                 prescribed_by = user,
                 status = 'ACTIVE'
             ).count()
@@ -124,7 +124,7 @@ def user_login(request):
 
         if user is not None:
             login(request, user)
-            message.success(request, f'Welcome back, {user.get_full_name() or user.username}!')
+            messages.success(request, f'Welcome back, {user.get_full_name() or user.username}!')
             return redirect('dashboard')
         else:
             messsages.error(request, 'Invalid username or password')

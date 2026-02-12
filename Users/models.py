@@ -27,7 +27,7 @@ class User(AbstractUser):
         verbose_name_plural = 'Users'
 
     def __str__(self):
-        return f"{self.name} ({self.get_user_type_display()})"
+        return f"{self.username} ({self.get_user_type_display()})"
     
     def save(self, *args, **kwargs):
         #To override save to create corresponding profile based user type

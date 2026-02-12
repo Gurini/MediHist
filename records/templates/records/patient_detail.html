@@ -1,0 +1,217 @@
+{% extends 'users/base.html' %}
+
+{% block title %}{{ patient.get_full_name }} - Patient Details{% endblock %}
+
+{% block content %}
+<div class="card">
+    <!-- Patient Header -->
+    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 2rem;">
+        <div>
+            <h2 style="color: #2c3e50; margin: 0 0 0.5rem 0;">{{ patient.get_full_name }}</h2>
+            <p style="color: #7f8c8d; margin: 0;">Patient ID: <strong>{{ patient.patient_id }}</strong></p>
+        </div>
+        <a href="{% url 'records:patient_list' %}" 
+           style="padding: 0.5rem 1.5rem; background: #95a5a6; color: white; text-decoration: none; border-radius: 4px;">
+            ← Back to List
+        </a>
+    </div>
+    
+    <!-- Patient Basic Info -->
+    <div style="background: #ecf0f1; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+        <h3 style="color: #34495e; margin-bottom: 1rem;">Basic Information</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div>
+                <p style="color: #7f8c8d; margin: 0; font-size: 0.9rem;">Age</p>
+                <p style="margin: 0.25rem 0 0 0; font-weight: bold;">{{ patient.get_age }} years</p>
+            </div>
+            <div>
+                <p style="color: #7f8c8d; margin: 0; font-size: 0.9rem;">Gender</p>
+                <p style="margin: 0.25rem 0 0 0; font-weight: bold;">{{ patient.get_gender_display }}</p>
+            </div>
+            <div>
+                <p style="color: #7f8c8d; margin: 0; font-size: 0.9rem;">Blood Group</p>
+                <p style="margin: 0.25rem 0 0 0; font-weight: bold;">{{ patient.blood_group|default:"Not specified" }}</p>
+            </div>
+            <div>
+                <p style="color: #7f8c8d; margin: 0; font-size: 0.9rem;">Phone</p>
+                <p style="margin: 0.25rem 0 0 0; font-weight: bold;">{{ patient.phone_number }}</p>
+            </div>
+        </div>
+        
+        {% if patient.allergies %}
+        <div style="margin-top: 1rem; padding: 1rem; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+            <p style="margin: 0; font-weight: bold; color: #856404;">⚠️ Allergies:</p>
+            <p style="margin: 0.5rem 0 0 0; color: #856404;">{{ patient.allergies }}</p>
+        </div>
+        {% endif %}
+        
+        {% if patient.chronic_conditions %}
+        <div style="margin-top: 1rem; padding: 1rem; background: #f8d7da; border-left: 4px solid #dc3545; border-radius: 4px;">
+            <p style="margin: 0; font-weight: bold; color: #721c24;">🏥 Chronic Conditions:</p>
+            <p style="margin: 0.5rem 0 0 0; color: #721c24;">{{ patient.chronic_conditions }}</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Action Buttons -->
+    {% if can_edit %}
+    <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+        <a href="{% url 'records:medical_history_create' patient.patient_id %}" 
+           style="padding: 0.75rem 1.5rem; background: #3498db; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            + Add Medical History
+        </a>
+        <a href="{% url 'records:diagnosis_create' patient.patient_id %}" 
+           style="padding: 0.75rem 1.5rem; background: #e74c3c; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            + Add Diagnosis
+        </a>
+        <a href="{% url 'records:prescription_create' patient.patient_id %}" 
+           style="padding: 0.75rem 1.5rem; background: #27ae60; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            + Add Prescription
+        </a>
+    </div>
+    {% endif %}
+    
+    <!-- Medical History Section -->
+    <div style="margin-bottom: 2rem;">
+        <h3 style="color: #2980b9; margin-bottom: 1rem;">📋 Medical History</h3>
+        {% if medical_histories %}
+            {% for history in medical_histories %}
+            <div style="background: #e8f4f8; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #2980b9;">
+                <div style="display: flex; justify-content: between; margin-bottom: 0.5rem;">
+                    <p style="margin: 0; font-weight: bold; color: #2980b9;">{{ history.date }}</p>
+                    <p style="margin: 0; color: #7f8c8d; font-size: 0.9rem;">Recorded by: {{ history.recorded_by.get_full_name|default:history.recorded_by.username }}</p>
+                </div>
+                <p style="margin: 0.5rem 0;"><strong>Chief Complaint:</strong> {{ history.chief_complaint }}</p>
+                <p style="margin: 0.5rem 0;"><strong>Present Illness:</strong> {{ history.present_illness }}</p>
+                
+                {% if history.temperature or history.blood_pressure or history.pulse_rate %}
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #bdc3c7;">
+                    <p style="margin: 0; font-weight: bold; color: #34495e;">Vital Signs:</p>
+                    <div style="display: flex; gap: 2rem; margin-top: 0.5rem; flex-wrap: wrap;">
+                        {% if history.temperature %}
+                        <span>🌡️ Temp: {{ history.temperature }}°F</span>
+                        {% endif %}
+                        {% if history.blood_pressure %}
+                        <span>💉 BP: {{ history.blood_pressure }}</span>
+                        {% endif %}
+                        {% if history.pulse_rate %}
+                        <span>❤️ Pulse: {{ history.pulse_rate }} bpm</span>
+                        {% endif %}
+                        {% if history.get_bmi %}
+                        <span>📊 BMI: {{ history.get_bmi }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if history.doctor_notes %}
+                <p style="margin: 1rem 0 0 0; padding-top: 1rem; border-top: 1px solid #bdc3c7;"><strong>Notes:</strong> {{ history.doctor_notes }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #7f8c8d; font-style: italic;">No medical history recorded yet.</p>
+        {% endif %}
+    </div>
+    
+    <!-- Diagnoses Section -->
+    <div style="margin-bottom: 2rem;">
+        <h3 style="color: #e74c3c; margin-bottom: 1rem;">🩺 Diagnoses</h3>
+        {% if diagnoses %}
+            {% for diagnosis in diagnoses %}
+            <div style="background: #fadbd8; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #e74c3c;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                    <div>
+                        <p style="margin: 0; font-weight: bold; font-size: 1.1rem; color: #e74c3c;">{{ diagnosis.condition }}</p>
+                        <p style="margin: 0.25rem 0 0 0; color: #7f8c8d; font-size: 0.9rem;">{{ diagnosis.diagnosis_date }} | Diagnosed by: {{ diagnosis.diagnosed_by.get_full_name|default:diagnosis.diagnosed_by.username }}</p>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <span style="padding: 0.25rem 0.75rem; background: 
+                            {% if diagnosis.severity == 'CRITICAL' %}#c0392b
+                            {% elif diagnosis.severity == 'SEVERE' %}#e74c3c
+                            {% elif diagnosis.severity == 'MODERATE' %}#f39c12
+                            {% else %}#27ae60{% endif %}; 
+                            color: white; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">
+                            {{ diagnosis.get_severity_display }}
+                        </span>
+                        <span style="padding: 0.25rem 0.75rem; background: #34495e; color: white; border-radius: 4px; font-size: 0.85rem;">
+                            {{ diagnosis.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                
+                <p style="margin: 1rem 0 0.5rem 0;"><strong>Description:</strong> {{ diagnosis.description }}</p>
+                
+                {% if diagnosis.symptoms %}
+                <p style="margin: 0.5rem 0;"><strong>Symptoms:</strong> {{ diagnosis.symptoms }}</p>
+                {% endif %}
+                
+                {% if diagnosis.treatment_plan %}
+                <p style="margin: 0.5rem 0;"><strong>Treatment Plan:</strong> {{ diagnosis.treatment_plan }}</p>
+                {% endif %}
+                
+                {% if diagnosis.follow_up_date %}
+                <p style="margin: 0.5rem 0;"><strong>Follow-up:</strong> {{ diagnosis.follow_up_date }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #7f8c8d; font-style: italic;">No diagnoses recorded yet.</p>
+        {% endif %}
+    </div>
+    
+    <!-- Prescriptions Section -->
+    <div style="margin-bottom: 2rem;">
+        <h3 style="color: #27ae60; margin-bottom: 1rem;">💊 Prescriptions</h3>
+        {% if prescriptions %}
+            {% for prescription in prescriptions %}
+            <div style="background: #d5f4e6; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #27ae60;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                    <div>
+                        <p style="margin: 0; font-weight: bold; font-size: 1.1rem; color: #27ae60;">{{ prescription.medication_name }}</p>
+                        <p style="margin: 0.25rem 0 0 0; color: #7f8c8d; font-size: 0.9rem;">{{ prescription.prescription_date }} | Prescribed by: {{ prescription.prescribed_by.get_full_name|default:prescription.prescribed_by.username }}</p>
+                    </div>
+                    <span style="padding: 0.25rem 0.75rem; background: 
+                        {% if prescription.status == 'ACTIVE' %}#27ae60
+                        {% elif prescription.status == 'COMPLETED' %}#95a5a6
+                        {% elif prescription.status == 'DISCONTINUED' %}#e74c3c
+                        {% else %}#f39c12{% endif %}; 
+                        color: white; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">
+                        {{ prescription.get_status_display }}
+                    </span>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                    <div>
+                        <p style="margin: 0; color: #7f8c8d; font-size: 0.85rem;">Dosage</p>
+                        <p style="margin: 0.25rem 0 0 0; font-weight: bold;">{{ prescription.dosage }}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0; color: #7f8c8d; font-size: 0.85rem;">Frequency</p>
+                        <p style="margin: 0.25rem 0 0 0; font-weight: bold;">{{ prescription.get_frequency_display }}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0; color: #7f8c8d; font-size: 0.85rem;">Route</p>
+                        <p style="margin: 0.25rem 0 0 0; font-weight: bold;">{{ prescription.route }}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0; color: #7f8c8d; font-size: 0.85rem;">Duration</p>
+                        <p style="margin: 0.25rem 0 0 0; font-weight: bold;">{{ prescription.duration }}</p>
+                    </div>
+                </div>
+                
+                <p style="margin: 1rem 0 0 0; padding-top: 1rem; border-top: 1px solid #bdc3c7;"><strong>Instructions:</strong> {{ prescription.instructions }}</p>
+                
+                {% if prescription.special_instructions %}
+                <div style="margin-top: 0.5rem; padding: 0.75rem; background: #fff3cd; border-radius: 4px;">
+                    <p style="margin: 0; color: #856404;"><strong>⚠️ Special Instructions:</strong> {{ prescription.special_instructions }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #7f8c8d; font-style: italic;">No prescriptions recorded yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

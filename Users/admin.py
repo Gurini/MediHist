@@ -9,13 +9,7 @@ class DoctorProfileInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = 'Doctor Profile'
     fk_name = 'user'
-
-
-class DoctorProfileInline(admin.StackedInline):
-    model = DoctorProfile
-    can_delete = False
-    verbose_name_plural = 'Doctor Profile'
-    fk_name = 'user'
+    fields = ['license_number', 'specialization', 'years_of_experience', 'hospital_affiliation', 'is_available']
 
 
 class NurseProfileInline(admin.StackedInline):
@@ -23,12 +17,14 @@ class NurseProfileInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = 'Nurse Profile'
     fk_name = 'user'
+    fields = ['license_number', 'specialization', 'years_of_experience', 'hospital_affiliation', 'shift_time', 'is_available']
 
 class AdminProfileInline(admin.StackedInline):
     model = AdminProfile
     can_delete = False
     verbose_name_plural = 'Admin Profile'
     fk_name = 'user'
+    field = ['department', 'role_description']
 
 
 @admin.register(User)
@@ -50,6 +46,18 @@ class UserAdmin(BaseUserAdmin):
         }),
     )
 
+    def save_model(self, request, obj, form, change):
+        #Save the user and create the appropriate profile based on user_type
+        super().save_model(request, obj, form, change)
+
+        if not change:
+            from django.contrib import messages
+            messages.success(
+                request,
+                f'{obj.get_user_type_display()} profile created for {obj.username}.'
+                f'Edit the user to update profile details.'
+            )
+
     def get_inline_instances(self, request, obj=None):
         #Display the appropriate inline based ob user_type
         if not obj:
@@ -57,11 +65,11 @@ class UserAdmin(BaseUserAdmin):
 
         inlines = []
         if obj.user_type == 'DOCTOR':
-            inlines.append(DoctorProfileInLine(self.model, self.admin_site))
+            inlines.append(DoctorProfileInline(self.model, self.admin_site))
         elif obj.user_type == 'NURSE':
-            inlines.append(NurseProfileInLine(self.model, self.admin_site))
-        elif obl.user_type == 'ADMIN':
-            inlines.append(AdminProfileInLine(self.model, self.admin_site))
+            inlines.append(NurseProfileInline(self.model, self.admin_site))
+        elif obj.user_type == 'ADMIN':
+            inlines.append(AdminProfileInline(self.model, self.admin_site))
 
         return inlines
 
@@ -73,6 +81,10 @@ class DoctorProfileAdmin(admin.ModelAdmin):
     search_fields = ['user__username', 'user__email', 'license_number', 'hospital_affiliation']
     readonly_fields = ['user']
 
+    def has_add_permission(self, request):
+        #Prevent adding DoctorProfile directly since it should be created via User
+        return False
+
 
 @admin.register(NurseProfile)
 class NurseProfileAdmin(admin.ModelAdmin):
@@ -81,9 +93,17 @@ class NurseProfileAdmin(admin.ModelAdmin):
     search_fields = ['user__username', 'user__email', 'license_number', 'hospital_affiliation']
     readonly_fields = ['user']
 
+    def has_add_permission(self, request):
+        #Prevent adding NurseProfile directly since it should be created via User
+        return False
+
 
 @admin.register(AdminProfile)
 class NurseProfileAdmin(admin.ModelAdmin):
     list_display = ['user', 'department']
     search_fields = ['user__username', 'user__email', 'department']
     readonly_fields = ['user']
+
+    def has_add_permission(self, request):
+        #Prevent adding AdminProfile directly since it should be created via User
+        return False
