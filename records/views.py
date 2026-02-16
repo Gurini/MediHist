@@ -178,6 +178,7 @@ def diagnosis_create(request, patient_id):
 def prescription_create(request, patient_id):
     #Create anew presxriptio, works for admins as well as doctors(but going forward will be reserved for doctors only)
     patient = get_object_or_404(Patient, patient_id=patient_id)
+    diagnoses = patient.diagnoses.filter(status__in=['ACTIVE', 'CHRONIC']) #Only active and chronic diagnoses should be available for prescription creation
     
     if request.method == 'POST':
         try:
@@ -205,8 +206,8 @@ def prescription_create(request, patient_id):
                 notes = request.POST.get('notes', ''),
                 prescribed_by = request.user
             )
-            messages.success(request, 'Prescriptiom created succressfully!')
-            return redirect('patient_detail', patient_id=patient_id)
+            messages.success(request, 'Prescription created succressfully!')
+            return redirect('records:patient_detail', patient_id=patient.patient_id)
         except Exception as e:
             messages.error(request, f'Error creating prescription: {str(e)}')
     
