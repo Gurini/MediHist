@@ -9,6 +9,7 @@ class User(AbstractUser):
         ('ADMIN', 'Admin'),
         ('DOCTOR', 'Doctor'),
         ('NURSE', 'Nurse'),
+        ('LAB', 'Lab Personnel')
     )
 
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES)
@@ -42,6 +43,8 @@ class User(AbstractUser):
                 NurseProfile.objects.get_or_create(user=self)
             elif self.user_type == 'ADMIN':
                 AdminProfile.objects.get_or_create(user=self)
+            elif self.user_type == 'LAB':
+                LabProfile.objects.get_or_create(user=self)
 
 class DoctorProfile(models.Model):
     #Profile model for Doctors
@@ -128,3 +131,31 @@ class AdminProfile(models.Model):
 
     def __str__(self):
         return f"Admin: {self.user.get_full_name()}"
+
+
+class LabProfile(models.Model):
+    #Profile for lab users
+
+    LAB_DEPARTMENT_CHOICES = (
+        ('HEMATOLOGY', 'Hematology'),
+        ('MICROBIOLOGY', 'Microbiology'),
+        ('PATHOLOGY', 'Pathology'),
+        ('RADIOLOGY', 'Radiology & Imaging'),
+        ('OTHER', 'Other'),
+    )
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='lab_profile')
+    employee_id = models.CharField(max_length=50, unique=True, blank=True, default='')
+    lab_department = models.CharField(max_length=50, choices=LAB_DEPARTMENT_CHOICES, blank=True, default='OTHER')     
+    qualification = modelsCharField(max_length=100, blank=True, default='')
+    years_of_experience = models.PositiveIntegerField(default=0)
+    is_available = models.BooleanField(default='True')
+
+    class Meta:
+        verbose_name = 'LAb Profile'
+        verbose_name_plural = 'LAb Profiles'
+
+    def __str__(self):
+        return f"Lab: {self.user.get_full_name()} - {self.get_lab_department_display()}"
+        
+    

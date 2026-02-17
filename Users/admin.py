@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, DoctorProfile, NurseProfile, AdminProfile
+from .models import User, DoctorProfile, NurseProfile, AdminProfile, LabProfile
 
 
 # Register your models here.
@@ -24,7 +24,14 @@ class AdminProfileInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = 'Admin Profile'
     fk_name = 'user'
-    field = ['department', 'role_description']
+    fields = ['department', 'role_description']
+
+class LabProfileInline(admin.StackedInline):
+    model = LabProfile
+    can_delete = False
+    verbose_name_plural = 'Lab Profile'
+    fk_name = 'user'
+    fields = ['employee_id', 'lab_department', 'qualification', 'years_of_experience', 'is_available']
 
 
 @admin.register(User)
@@ -99,7 +106,7 @@ class NurseProfileAdmin(admin.ModelAdmin):
 
 
 @admin.register(AdminProfile)
-class NurseProfileAdmin(admin.ModelAdmin):
+class AdminProfileAdmin(admin.ModelAdmin):
     list_display = ['user', 'department']
     search_fields = ['user__username', 'user__email', 'department']
     readonly_fields = ['user']
@@ -107,3 +114,14 @@ class NurseProfileAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         #Prevent adding AdminProfile directly since it should be created via User
         return False
+
+
+@admin.register(AdminProfile)
+class LabProfileAdmin(admin.ModelAdmin):
+    list_display = ['user', 'employee_id', 'lab_department', 'years_of_experience', 'is_available']
+    list_filter = ['lab_department', 'is_available']
+    serach_fields = ['user__username', 'user__email', 'employe_id']
+    readonly_fields = ['user']
+
+    def has_add_permission(self, request):
+        return Falsen 

@@ -63,7 +63,7 @@ class Patient(models.Model):
     class Meta:
         verbose_name = 'Patient'
         verbose_name_plural = 'Patients'
-        ordering = ['created_at']
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"{self.patient_id} - {self.get_full_name()}"
@@ -101,7 +101,7 @@ class MedicalHistory(models.Model):
     #Medical history for patients
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='medical_histories')
     date = models.DateField()
-    chief_complaint = models.TextField(help_text="Main reaso for visit")
+    chief_complaint = models.TextField(help_text="Main reason for visit")
     present_illness = models.TextField(help_text="History of preset illness")
     past_medical_history = models.TextField(blank=True, help_text="Relevant past medical history")
     family_history = models.TextField(blank=True, help_text="Relevant family medical history")
@@ -129,11 +129,11 @@ class MedicalHistory(models.Model):
     class Meta:
         verbose_name = 'Medical History'
         verbose_name_plural = 'Medical Histories'
-        ordering = ['-date', 'created_at']
+        ordering = ['-date', '-created_at']
 
 
     def __str__(self):
-        return f"{self.patient.get_full_name() - self.date}"
+        return f"{self.patient.get_full_name()} - {self.date}"
 
     
     def get_bmi(self):
@@ -262,3 +262,128 @@ class Prescription(models.Model):
             from datetime import date
             return date.today > self.end_date
         return False
+
+
+def lab_result_file_path(instance, filename):
+    #Genreating upload path for lab result files
+    return f'lab_results/{instance.lab_result.lab_test.patient.patient_id/{filename}}'
+
+
+def validate_file_size(value):
+    #validate that file is under 12mb
+    limit = 12 * 1024 * 1024 #12mb in bytes
+    if value.size > limit:
+        from dango.core.exceptions import ValidationError
+        raise ValidationError(f'File size must be under 12MB. Your file is {value.size / (1024*1024):.1f}MB.')
+
+
+class LabTest(models.Model):
+    #Labb test order - created by doctor & goes into a general queue for lab personnel to pick up
+    CATEGORY_CHOICE = (
+        ('BLOOD', 'Blood'),
+        ('IMAGING', 'Imaging (X-Ray, CT, MRI, Ultrasound)'),
+        ('URINE', 'Urine Test'),
+        ('CARDIAC', 'Cardiac (ECG, Echo)'),
+        ('MICROBIOLOGY', 'Microbiology'),
+        ('PATHOLOGY','Pathology'),
+        ('OTHER', 'Other / Custom')
+    )
+
+    STATUS_CHOICES = (
+        ('ORDERED', 'Ordered'),
+        ('IN_PROGRESS', 'In Progress'),
+        ('COMPLETED', 'Completed'),
+        ('REVIEWED', 'Reviewed by Doctor'),
+        ('CANCELLED', 'Cancelled'),
+    )
+
+    URGENCY_CHOICES = (
+        ('ROUTINE', 'Routine'),
+        ('URGENT', 'Urgent'),
+        ('STAT', 'STAT (Immediate)'),
+    )
+
+    #critical info
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='lab_tests')
+    diagnosis = models.ForeignKey(Diagmosis, on_delete=models.SET_NULL, null=True, blank=True, related_name='lab_tests')
+    test_name = models.CharField(max_length=200)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    urgency = models.CharField(max_length=10, choices=URGENCY_CHOICES, default='ROUTINE')
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='ORDERED')
+
+    #Instruction or note from ordering doctor
+    instructions = models.TextField(blank=True, help_text="Instruction for the lab personnel")
+    notes = models.TextField(blank=True)
+
+    #Who picked it up from queue
+    assigned_to = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        help_text="Lab Personnel who picked up this test"
+    )
+    assigned_at = models.DateTimeField(null=True, blank=True)
+
+    #System Fields
+    ordered_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='lab_tests_ordered')
+    ordered_date = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_add_now=True)
+
+    class Meta:
+        verbose_name = 'Lab Test'
+        verbose_name_plural = 'Lab Tests'
+        ordering = ['-ordered_date']
+
+    def __str__(self):
+        return f"{self.patient.get_full_name()} - {self.test_name} ({self.get_status_display()})"
+
+    def is_in_queue(self):
+        #checks if test is in the general queue
+        return self.status == 'ORDERED' and self.assigned_to is None
+
+    def get_urgency_color(self):
+        colors = {'ROUTINE': 'green', 'URGENT': 'orange', 'STAT': 'red'}
+        return colors.get(self.urgency, 'grey')
+
+    def get_status_color(self):
+        colors = {
+            'ORDERED': '#f39c12',
+            'IN_PROGRESS': '#3498db',
+            'COMPLETED': '#27ae60',
+            'REVIEWED': '#8e44ad',
+            'CANCELLED': '#e74c3c'
+        }
+        return colors.get(self.status, '#95a5a6')
+
+
+class LabResult(models.Model):
+    #Lab result created by lab result after completing the test
+    lab_test = models.OneToOneField(LabTest, on_delete=models.CASCADE, related_name='result')
+
+    #Result data
+    result_date = models.DateField()
+    result_summary = models.TextField(help_text="Summary of text results")
+    lab_notes = models.TextField(blank=True, help_text="Lab Personnel observations and technical notes")
+
+    #scan_notes
+    scan_notes = models.TextField(blank=True, help_text='Specific notes for imaging/scans (body part, technique, contrast used, etc.)')
+    is_abnormal = models.BooleanField(default=False, help_text='Flag f results are abnormal')
+    interpretation = models.TextField(blank=True, help_text="Doctor's interprettation and clinical notes")
+    interpretated_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='lab_results_interpreted'
+    )
+    interpreted_at = models.DateTimeField(null=True, blank=True)
+
+    # system fields
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='lab_results_uploaded')
+    created_at = models.DateTimeField(auto_add_now=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Lab Result'
+        verbose_name_plural = 'Lab Results'
+        ordering = ['-result_date']
+
+    def __str__(self):
+        abnormal = '⚠️ ABNORMAL' if self.is_abnormal else ''
+        return f"{self.lab_test.test_name} - {self.result_date}{abnormal}"
