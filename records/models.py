@@ -387,3 +387,41 @@ class LabResult(models.Model):
     def __str__(self):
         abnormal = '⚠️ ABNORMAL' if self.is_abnormal else ''
         return f"{self.lab_test.test_name} - {self.result_date}{abnormal}"
+
+
+class LabResultFile(models.Model):
+    #Files from lab result uploaded by lab personnel
+    FILE_TYPE_CHOICES = (
+        ('PDF', 'PDF Report'),
+        ('IMAGE', 'Image (JPG, PNG)'),
+        ('scan', 'Medical Scan (DICOM / High-res image)'),
+        ('OTHER', 'Other'),
+    )
+
+    lab_result = models.Foreign(LabResult, on_delete=models.CASCADE, related_name='files')
+    file = models.FileField(upload_to=lab_result_file_path, validators=[validate_file_size])
+    file_type = models.CharField(max_length=10, choices=FILE_TYPE_CHOICES)
+    file_name = models.CharField(max_length=250, blank=True, help_text='Descriptive file for the file')
+    description = models.CharField(max_length=500, blank=True, help_text='Brief description for this file')
+
+    #Lab personnel note specific t a file
+    file_notes = models.TextField(blank=True, help_text='Specific observation or notes about this file/scan')
+
+    #system fields
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='lab_files-uploaded')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Lab Result File'
+        verbose_name_plural = 'Lab Result Files'
+        ordering = ['-uploaded_at']
+
+        def __str__(self):
+            return f"{self.file_name or self.file.name} - ({self.get_file_type_display()})"
+
+        def get_file_size_mb(self):
+            #to get file size in mb
+            try:
+                return round(self.file.size / (1024 * 1024), 2)
+            except Exception:
+                return 0

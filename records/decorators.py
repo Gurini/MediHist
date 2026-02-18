@@ -67,3 +67,29 @@ def can_view_records(user):
 def can_create_patients(user):
     # Check if user can create medical records(admin only)
     return user.user_type == 'ADMIN' or user.is_superuser
+
+
+def lab_or_doctor_or_admin_required(view_func):
+    #Accessible by lab personnel, doctors and admins
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if request.user.user_type not in ['LAB', 'DOCTOR', 'ADMIN'] and not request.user.is_superuser:
+            messages.error(request, 'You do not have permission to access this page.')
+            return redirect('dashboard')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+def all_staff_required(view_func):
+    #Accessible to all staffs(including lab personnel)
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if request.user.user_type not in ['LAB', 'DOCTOR', 'NURSE', 'ADMIN'] and not request.user.is_superuser:
+            messages.error(request, 'You do not permission to access this page.')
+            return redirect('dashboard')
+        return view_func(request, *args, **kwargs)
+    return wrapper
