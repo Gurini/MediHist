@@ -18,6 +18,19 @@ urlpatterns = [
     # Prescription URLs
     path('patients/<str:patient_id>/prescription/create/', views.prescription_create, name='prescription_create'),
     
+    #LAb teest URLs
+    path('lab-tests/', views.lab_test_list, name='lab_test_list'),
+    path('patients/<str:patient_id>/lab-test/create/', views.lab_test_create, name='lab_test_create'),
+    path('patients/<int:test_id>/', views.lab_test_detail, name='lab_test_detail'),
+    path('patients/<int:test_id>/pickup/', views.lab_test_pickup, name='lab_test_pickup'),
+    path('patients/<int:test_id>/', views.lab_test_detail, name='lab_test_detail'),
+
+    #Lab results URLs
+    path('patients/<int:test_id>/results/create', views.lab_result_create, name='lab_result_create'),
+    path('patients/<int:test_id>/results/add-file', views.lab_result_add_file, name='lab_result_add_file'),
+    path('patients/<int:test_id>/results/interpret', views.lab_result_interpret, name='lab_result_interpret'),
+    
+    
     # Search
     path('search/', views.search_patients, name='search_patients'),
 ]

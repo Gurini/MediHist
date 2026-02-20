@@ -1,0 +1,50 @@
+{% extends 'users/base.html' %}
+{% block title %}Add Files - {{ lab_test.test_name }}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:700px; margin:2rem auto;">
+    <h2 style="color:#8e44ad; margin-bottom:0.5rem;">📎 Add More Files</h2>
+    <p style="color:#7f8c8d; margin-bottom:2rem;">Test: <strong>{{ lab_test.test_name }}</strong> | Patient: <strong>{{ lab_test.patient.get_full_name }}</strong></p>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div id="file-upload-container">
+            <div class="file-upload-row" style="border:1px solid #ecf0f1; padding:1rem; border-radius:8px; margin-bottom:1rem; background:#fafafa;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:0.75rem;">
+                    <div>
+                        <label style="display:block; margin-bottom:0.4rem; font-weight:bold; font-size:0.9rem;">File (Max 12MB)</label>
+                        <input type="file" name="result_files" required accept=".pdf,.jpg,.jpeg,.png,.tiff,.tif"
+                               style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;">
+                    </div>
+                    <div>
+                        <label style="display:block; margin-bottom:0.4rem; font-weight:bold; font-size:0.9rem;">File Type</label>
+                        <select name="file_types" style="width:100%; padding:0.6rem; border:1px solid #ddd; border-radius:4px;">
+                            {% for value, label in file_type_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <label style="display:block; margin-bottom:0.4rem; font-weight:bold; font-size:0.9rem;">Description</label>
+                    <input type="text" name="file_descriptions" placeholder="Brief description of this file"
+                           style="width:100%; padding:0.6rem; border:1px solid #ddd; border-radius:4px;">
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:0.4rem; font-weight:bold; font-size:0.9rem;">Notes</label>
+                    <textarea name="file_notes" rows="2" placeholder="Observations about this file..."
+                              style="width:100%; padding:0.6rem; border:1px solid #ddd; border-radius:4px;"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:1rem; justify-content:flex-end;">
+            <a href="{% url 'records:lab_test_detail' lab_test.id %}"
+               style="padding:0.75rem 2rem; background:#95a5a6; color:white; text-decoration:none; border-radius:4px; font-weight:bold;">Cancel</a>
+            <button type="submit" style="padding:0.75rem 2rem; background:#8e44ad; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">
+                📎 Upload Files
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

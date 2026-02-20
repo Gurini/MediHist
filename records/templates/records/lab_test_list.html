@@ -1,0 +1,131 @@
+{% extends 'users/base.html' %}
+{% block title %}Lab Tests - Medihist{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h2 style="color:#2c3e50; margin:0;">🔬 Lab Tests</h2>
+        <div style="display:flex; gap:0.75rem;">
+            {% if user.user_type == 'LAB' %}
+                <span style="padding:0.5rem 1rem; background:#f39c12; color:white; border-radius:4px; font-weight:bold;">
+                    📋 Queue: {{ queue_count }} Pending
+                </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filters & Search -->
+    <form method="get" style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1.5rem;">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search patient or test name..."
+               style="flex:1; min-width:200px; padding:0.6rem; border:1px solid #ddd; border-radius:4px;">
+        <select name="status" style="padding:0.6rem; border:1px solid #ddd; border-radius:4px;">
+            <option value="">All Statuses</option>
+            {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <select name="category" style="padding:0.6rem; border:1px solid #ddd; border-radius:4px;">
+            <option value="">All Categories</option>
+            {% for value, label in category_choices %}
+            <option value="{{ value }}" {% if category_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" style="padding:0.6rem 1.5rem; background:#3498db; color:white; border:none; border-radius:4px; cursor:pointer;">Filter</button>
+        {% if query or status_filter or category_filter %}
+        <a href="{% url 'records:lab_test_list' %}" style="padding:0.6rem 1rem; background:#95a5a6; color:white; text-decoration:none; border-radius:4px;">Clear</a>
+        {% endif %}
+    </form>
+
+    {% if user.user_type == 'LAB' %}
+    <!-- Queue tab for lab personnel -->
+    <div style="display:flex; gap:0.5rem; margin-bottom:1.5rem;">
+        <a href="?queue=all" style="padding:0.5rem 1rem; background:{% if request.GET.queue == 'all' %}#3498db{% else %}#ecf0f1{% endif %}; color:{% if request.GET.queue == 'all' %}white{% else %}#2c3e50{% endif %}; text-decoration:none; border-radius:4px;">All</a>
+        <a href="?" style="padding:0.5rem 1rem; background:{% if not request.GET.queue %}#3498db{% else %}#ecf0f1{% endif %}; color:{% if not request.GET.queue %}white{% else %}#2c3e50{% endif %}; text-decoration:none; border-radius:4px;">Queue + Mine</a>
+        <a href="?queue=mine" style="padding:0.5rem 1rem; background:{% if request.GET.queue == 'mine' %}#3498db{% else %}#ecf0f1{% endif %}; color:{% if request.GET.queue == 'mine' %}white{% else %}#2c3e50{% endif %}; text-decoration:none; border-radius:4px;">My Assigned</a>
+    </div>
+    {% endif %}
+
+    {% if tests %}
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="background:#ecf0f1;">
+                    <th style="padding:0.75rem; text-align:left; border-bottom:2px solid #bdc3c7;">Patient</th>
+                    <th style="padding:0.75rem; text-align:left; border-bottom:2px solid #bdc3c7;">Test Name</th>
+                    <th style="padding:0.75rem; text-align:left; border-bottom:2px solid #bdc3c7;">Category</th>
+                    <th style="padding:0.75rem; text-align:left; border-bottom:2px solid #bdc3c7;">Urgency</th>
+                    <th style="padding:0.75rem; text-align:left; border-bottom:2px solid #bdc3c7;">Status</th>
+                    <th style="padding:0.75rem; text-align:left; border-bottom:2px solid #bdc3c7;">Ordered By</th>
+                    <th style="padding:0.75rem; text-align:left; border-bottom:2px solid #bdc3c7;">Date</th>
+                    <th style="padding:0.75rem; text-align:left; border-bottom:2px solid #bdc3c7;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for test in tests %}
+                <tr style="border-bottom:1px solid #ecf0f1;">
+                    <td style="padding:0.75rem;">
+                        <a href="{% url 'records:patient_detail' test.patient.patient_id %}" style="color:#3498db; text-decoration:none;">
+                            {{ test.patient.get_full_name }}
+                        </a>
+                        <br><small style="color:#95a5a6;">{{ test.patient.patient_id }}</small>
+                    </td>
+                    <td style="padding:0.75rem; font-weight:bold;">{{ test.test_name }}</td>
+                    <td style="padding:0.75rem;">{{ test.get_category_display }}</td>
+                    <td style="padding:0.75rem;">
+                        <span style="padding:0.2rem 0.6rem; border-radius:4px; font-size:0.85rem; font-weight:bold;
+                            background:{% if test.urgency == 'STAT' %}#e74c3c{% elif test.urgency == 'URGENT' %}#f39c12{% else %}#27ae60{% endif %};
+                            color:white;">
+                            {{ test.get_urgency_display }}
+                        </span>
+                    </td>
+                    <td style="padding:0.75rem;">
+                        <span style="padding:0.2rem 0.6rem; border-radius:4px; font-size:0.85rem;
+                            background:{{ test.get_status_color }}; color:white; font-weight:bold;">
+                            {{ test.get_status_display }}
+                        </span>
+                        {% if test.result and test.result.is_abnormal %}
+                        <span style="display:block; margin-top:0.25rem; font-size:0.8rem; color:#e74c3c; font-weight:bold;">⚠️ ABNORMAL</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:0.75rem; font-size:0.9rem;">{{ test.ordered_by.get_full_name|default:test.ordered_by.username }}</td>
+                    <td style="padding:0.75rem; font-size:0.9rem;">{{ test.ordered_date|date:"M d, Y" }}</td>
+                    <td style="padding:0.75rem;">
+                        <a href="{% url 'records:lab_test_detail' test.id %}"
+                           style="padding:0.4rem 0.9rem; background:#3498db; color:white; text-decoration:none; border-radius:4px; font-size:0.85rem;">
+                            View
+                        </a>
+                        {% if user.user_type == 'LAB' and test.status == 'ORDERED' and not test.assigned_to %}
+                        <a href="{% url 'records:lab_test_pickup' test.id %}"
+                           style="padding:0.4rem 0.9rem; background:#27ae60; color:white; text-decoration:none; border-radius:4px; font-size:0.85rem; margin-left:0.25rem;">
+                            Pick Up
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if tests.has_other_pages %}
+    <div style="margin-top:1.5rem; text-align:center; display:flex; gap:0.5rem; justify-content:center;">
+        {% if tests.has_previous %}
+        <a href="?page={{ tests.previous_page_number }}&status={{ status_filter }}&category={{ category_filter }}&q={{ query }}"
+           style="padding:0.5rem 1rem; background:#ecf0f1; color:#2c3e50; text-decoration:none; border-radius:4px;">Previous</a>
+        {% endif %}
+        <span style="padding:0.5rem 1rem; background:#3498db; color:white; border-radius:4px;">Page {{ tests.number }} of {{ tests.paginator.num_pages }}</span>
+        {% if tests.has_next %}
+        <a href="?page={{ tests.next_page_number }}&status={{ status_filter }}&category={{ category_filter }}&q={{ query }}"
+           style="padding:0.5rem 1rem; background:#ecf0f1; color:#2c3e50; text-decoration:none; border-radius:4px;">Next</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div style="text-align:center; padding:3rem; background:#ecf0f1; border-radius:8px;">
+        <p style="color:#7f8c8d; font-size:1.1rem;">No lab tests found.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

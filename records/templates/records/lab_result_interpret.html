@@ -1,0 +1,51 @@
+{% extends 'users/base.html' %}
+{% block title %}Interpret Results - {{ lab_test.test_name }}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:750px; margin:2rem auto;">
+    <h2 style="color:#e74c3c; margin-bottom:0.5rem;">🩺 Review & Interpret Results</h2>
+    <p style="color:#7f8c8d; margin-bottom:0.25rem;">Test: <strong>{{ lab_test.test_name }}</strong> ({{ lab_test.get_category_display }})</p>
+    <p style="color:#7f8c8d; margin-bottom:2rem;">Patient: <strong>{{ lab_test.patient.get_full_name }}</strong></p>
+
+    <!-- Result Summary (read-only) -->
+    <div style="background:#f8f9fa; padding:1.25rem; border-radius:8px; margin-bottom:1.5rem; border-left:4px solid #27ae60;">
+        <h4 style="color:#27ae60; margin:0 0 0.75rem 0;">Lab Result Summary (Read-only)</h4>
+        <p style="white-space:pre-line; margin:0;">{{ result.result_summary }}</p>
+        {% if result.lab_notes %}
+        <p style="margin:0.75rem 0 0 0; padding-top:0.75rem; border-top:1px solid #dee2e6;"><strong>Lab Notes:</strong><br>{{ result.lab_notes }}</p>
+        {% endif %}
+        {% if result.scan_notes %}
+        <p style="margin:0.75rem 0 0 0; padding-top:0.75rem; border-top:1px solid #dee2e6;"><strong>Scan Notes:</strong><br>{{ result.scan_notes }}</p>
+        {% endif %}
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- Abnormal Flag -->
+        <div style="margin-bottom:1.5rem; padding:1.25rem; border:2px solid #e74c3c; border-radius:8px; background:#fff5f5;">
+            <label style="display:flex; align-items:center; gap:0.75rem; cursor:pointer;">
+                <input type="checkbox" name="is_abnormal" id="is_abnormal"
+                       {% if result.is_abnormal %}checked{% endif %}
+                       style="width:1.25rem; height:1.25rem; cursor:pointer;">
+                <span style="font-weight:bold; font-size:1.05rem; color:#e74c3c;">⚠️ Flag as ABNORMAL Result</span>
+            </label>
+            <p style="margin:0.5rem 0 0 1.9rem; color:#7f8c8d; font-size:0.9rem;">Check this if any values are outside normal range or clinically significant</p>
+        </div>
+
+        <div style="margin-bottom:1.5rem;">
+            <label style="display:block; margin-bottom:0.5rem; font-weight:bold;">Doctor's Interpretation & Clinical Notes *</label>
+            <textarea name="interpretation" rows="6" required
+                      placeholder="Enter your clinical interpretation of the results...&#10;&#10;e.g., Results indicate mild anemia. Hemoglobin is below normal range. Recommend iron supplementation and repeat CBC in 4 weeks. No immediate intervention required."
+                      style="width:100%; padding:0.75rem; border:1px solid #ddd; border-radius:4px;">{{ result.interpretation }}</textarea>
+        </div>
+
+        <div style="display:flex; gap:1rem; justify-content:flex-end;">
+            <a href="{% url 'records:lab_test_detail' lab_test.id %}"
+               style="padding:0.75rem 2rem; background:#95a5a6; color:white; text-decoration:none; border-radius:4px; font-weight:bold;">Cancel</a>
+            <button type="submit" style="padding:0.75rem 2rem; background:#e74c3c; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">
+                ✅ Save Interpretation
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

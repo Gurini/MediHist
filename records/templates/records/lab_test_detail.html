@@ -1,0 +1,186 @@
+{% extends 'users/base.html' %}
+{% block title %}{{ lab_test.test_name }} - Lab Test Detail{% endblock %}
+
+{% block content %}
+<div class="card">
+    <!-- Header -->
+    <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:1.5rem;">
+        <div>
+            <h2 style="color:#2c3e50; margin:0 0 0.3rem 0;">🔬 {{ lab_test.test_name }}</h2>
+            <p style="color:#7f8c8d; margin:0;">
+                Patient: <strong><a href="{% url 'records:patient_detail' lab_test.patient.patient_id %}" style="color:#3498db;">{{ lab_test.patient.get_full_name }}</a></strong>
+                ({{ lab_test.patient.patient_id }})
+            </p>
+        </div>
+        <a href="{% url 'records:lab_test_list' %}" style="padding:0.5rem 1.5rem; background:#95a5a6; color:white; text-decoration:none; border-radius:4px;">← Back</a>
+    </div>
+
+    <!-- Status Banner -->
+    <div style="padding:1rem 1.5rem; background:{{ lab_test.get_status_color }}20; border-left:5px solid {{ lab_test.get_status_color }}; border-radius:4px; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <span style="font-weight:bold; color:{{ lab_test.get_status_color }}; font-size:1.1rem;">{{ lab_test.get_status_display }}</span>
+            {% if lab_test.result and lab_test.result.is_abnormal %}
+            <span style="margin-left:1rem; padding:0.25rem 0.75rem; background:#e74c3c; color:white; border-radius:4px; font-weight:bold;">⚠️ ABNORMAL RESULT</span>
+            {% endif %}
+        </div>
+        <span style="padding:0.25rem 0.75rem; background:{% if lab_test.urgency == 'STAT' %}#e74c3c{% elif lab_test.urgency == 'URGENT' %}#f39c12{% else %}#27ae60{% endif %}; color:white; border-radius:4px; font-size:0.9rem; font-weight:bold;">
+            {{ lab_test.get_urgency_display }}
+        </span>
+    </div>
+
+    <!-- Test Info Grid -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+        <div style="background:#f8f9fa; padding:1.25rem; border-radius:8px;">
+            <h4 style="color:#34495e; margin:0 0 1rem 0;">Test Information</h4>
+            <p style="margin:0.4rem 0;"><strong>Category:</strong> {{ lab_test.get_category_display }}</p>
+            <p style="margin:0.4rem 0;"><strong>Ordered By:</strong> {{ lab_test.ordered_by.get_full_name|default:lab_test.ordered_by.username }}</p>
+            <p style="margin:0.4rem 0;"><strong>Ordered Date:</strong> {{ lab_test.ordered_date|date:"M d, Y H:i" }}</p>
+            {% if lab_test.diagnosis %}
+            <p style="margin:0.4rem 0;"><strong>Linked Diagnosis:</strong> {{ lab_test.diagnosis.condition }}</p>
+            {% endif %}
+            {% if lab_test.instructions %}
+            <p style="margin:0.75rem 0 0 0; padding-top:0.75rem; border-top:1px solid #dee2e6;"><strong>Instructions:</strong><br>{{ lab_test.instructions }}</p>
+            {% endif %}
+        </div>
+
+        <div style="background:#f8f9fa; padding:1.25rem; border-radius:8px;">
+            <h4 style="color:#34495e; margin:0 0 1rem 0;">Assignment</h4>
+            {% if lab_test.assigned_to %}
+                <p style="margin:0.4rem 0;"><strong>Assigned To:</strong> {{ lab_test.assigned_to.get_full_name }}</p>
+                <p style="margin:0.4rem 0;"><strong>Assigned At:</strong> {{ lab_test.assigned_at|date:"M d, Y H:i" }}</p>
+                {% if lab_test.assigned_to.user_type == 'LAB' %}
+                <p style="margin:0.4rem 0;"><strong>Department:</strong> {{ lab_test.assigned_to.lab_profile.get_lab_department_display }}</p>
+                {% endif %}
+            {% else %}
+                <p style="color:#f39c12; font-weight:bold;">⏳ In general queue - awaiting pickup</p>
+                {% if can_pickup %}
+                <a href="{% url 'records:lab_test_pickup' lab_test.id %}"
+                   style="display:inline-block; margin-top:0.75rem; padding:0.6rem 1.25rem; background:#27ae60; color:white; text-decoration:none; border-radius:4px; font-weight:bold;">
+                    ✋ Pick Up This Test
+                </a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1.5rem;">
+        {% if can_upload and lab_test.status == 'IN_PROGRESS' and is_assigned_to_me and not lab_test.result %}
+        <a href="{% url 'records:lab_result_create' lab_test.id %}"
+           style="padding:0.75rem 1.5rem; background:#3498db; color:white; text-decoration:none; border-radius:4px; font-weight:bold;">
+            📋 Submit Results
+        </a>
+        {% endif %}
+        {% if can_upload and lab_test.result %}
+        <a href="{% url 'records:lab_result_add_file' lab_test.id %}"
+           style="padding:0.75rem 1.5rem; background:#8e44ad; color:white; text-decoration:none; border-radius:4px; font-weight:bold;">
+            📎 Add More Files
+        </a>
+        {% endif %}
+        {% if can_interpret and lab_test.status == 'COMPLETED' and lab_test.result %}
+        <a href="{% url 'records:lab_result_interpret' lab_test.id %}"
+           style="padding:0.75rem 1.5rem; background:#e74c3c; color:white; text-decoration:none; border-radius:4px; font-weight:bold;">
+            🩺 Review & Interpret
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Lab Results Section -->
+    {% if result %}
+    <div style="background:#e8f5e9; padding:1.5rem; border-radius:8px; border-left:4px solid #27ae60; margin-bottom:1.5rem;">
+        <h3 style="color:#27ae60; margin:0 0 1rem 0;">📊 Lab Results</h3>
+        <p style="margin:0.4rem 0;"><strong>Result Date:</strong> {{ result.result_date }}</p>
+        <p style="margin:0.75rem 0;"><strong>Result Summary:</strong><br>
+            <span style="white-space:pre-line;">{{ result.result_summary }}</span>
+        </p>
+
+        {% if result.lab_notes %}
+        <div style="margin-top:1rem; padding:1rem; background:white; border-radius:4px;">
+            <p style="margin:0; font-weight:bold; color:#34495e;">🔬 Lab Personnel Notes:</p>
+            <p style="margin:0.5rem 0 0 0; white-space:pre-line;">{{ result.lab_notes }}</p>
+        </div>
+        {% endif %}
+
+        {% if result.scan_notes %}
+        <div style="margin-top:1rem; padding:1rem; background:#fff3e0; border-radius:4px;">
+            <p style="margin:0; font-weight:bold; color:#e65100;">📡 Scan/Imaging Notes:</p>
+            <p style="margin:0.5rem 0 0 0; white-space:pre-line;">{{ result.scan_notes }}</p>
+        </div>
+        {% endif %}
+
+        <p style="margin:0.75rem 0 0 0; color:#7f8c8d; font-size:0.9rem;">
+            Submitted by {{ result.uploaded_by.get_full_name|default:result.uploaded_by.username }} on {{ result.created_at|date:"M d, Y H:i" }}
+        </p>
+    </div>
+
+    <!-- Files -->
+    {% if files %}
+    <div style="margin-bottom:1.5rem;">
+        <h3 style="color:#2c3e50; margin-bottom:1rem;">📎 Attached Files</h3>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1rem;">
+            {% for file in files %}
+            <div style="border:1px solid #dee2e6; border-radius:8px; padding:1.25rem;">
+                <div style="display:flex; justify-content:space-between; align-items:start;">
+                    <div>
+                        <p style="margin:0; font-weight:bold; color:#2c3e50;">
+                            {% if file.file_type == 'PDF' %}📄
+                            {% elif file.file_type == 'SCAN' %}🖥️
+                            {% elif file.file_type == 'IMAGE' %}🖼️
+                            {% else %}📁{% endif %}
+                            {{ file.file_name|default:"File" }}
+                        </p>
+                        <p style="margin:0.25rem 0; color:#7f8c8d; font-size:0.85rem;">{{ file.get_file_type_display }}</p>
+                        {% if file.get_file_size_mb %}
+                        <p style="margin:0; color:#95a5a6; font-size:0.8rem;">{{ file.get_file_size_mb }} MB</p>
+                        {% endif %}
+                    </div>
+                    <a href="{{ file.file.url }}" target="_blank"
+                       style="padding:0.4rem 0.75rem; background:#3498db; color:white; text-decoration:none; border-radius:4px; font-size:0.85rem;">
+                        Download
+                    </a>
+                </div>
+                {% if file.description %}
+                <p style="margin:0.75rem 0 0 0; font-size:0.9rem; color:#555;">{{ file.description }}</p>
+                {% endif %}
+                {% if file.file_notes %}
+                <div style="margin-top:0.75rem; padding:0.75rem; background:#f8f9fa; border-radius:4px;">
+                    <p style="margin:0; font-size:0.85rem; font-weight:bold; color:#34495e;">Lab Notes:</p>
+                    <p style="margin:0.25rem 0 0 0; font-size:0.85rem; white-space:pre-line;">{{ file.file_notes }}</p>
+                </div>
+                {% endif %}
+                <p style="margin:0.5rem 0 0 0; font-size:0.8rem; color:#95a5a6;">Uploaded by {{ file.uploaded_by.get_full_name|default:file.uploaded_by.username }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Doctor Interpretation -->
+    {% if result.interpretation %}
+    <div style="background:#fadbd8; padding:1.5rem; border-radius:8px; border-left:4px solid #e74c3c;">
+        <h3 style="color:#e74c3c; margin:0 0 1rem 0;">🩺 Doctor's Interpretation</h3>
+        {% if result.is_abnormal %}
+        <div style="padding:0.75rem; background:#e74c3c; color:white; border-radius:4px; margin-bottom:1rem; font-weight:bold;">
+            ⚠️ RESULTS FLAGGED AS ABNORMAL
+        </div>
+        {% endif %}
+        <p style="white-space:pre-line;">{{ result.interpretation }}</p>
+        <p style="margin:0.75rem 0 0 0; color:#7f8c8d; font-size:0.9rem;">
+            Interpreted by {{ result.interpreted_by.get_full_name|default:result.interpreted_by.username }} on {{ result.interpreted_at|date:"M d, Y H:i" }}
+        </p>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div style="text-align:center; padding:2rem; background:#fff3e0; border-radius:8px;">
+        <p style="color:#f57c00;">⏳ Results not yet available.</p>
+        {% if can_pickup and lab_test.status == 'ORDERED' %}
+        <a href="{% url 'records:lab_test_pickup' lab_test.id %}"
+           style="display:inline-block; margin-top:0.75rem; padding:0.75rem 1.5rem; background:#27ae60; color:white; text-decoration:none; border-radius:4px; font-weight:bold;">
+            ✋ Pick Up This Test
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
