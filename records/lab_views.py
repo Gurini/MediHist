@@ -64,3 +64,162 @@ def lab_test_list(request):
             'category_choices': LabTest.CATEGORY_CHOICES,
         }
         return render(request, 'records/lab_test_list.html', context)
+
+
+@login_required
+@doctor_or_admin_required
+def lab_test_create(request, patient_id):
+    #Order a new lab test(for doctors and admin only)
+    patient = get_object_or_404(PAtient, patient_id=patient_id)
+    diagnoses = patient.diagnoses.filter(status__in=['ACTIVE', 'CHRONIC', 'UNDER_OBSERVATION'])
+
+    if request.method == 'POST':
+        try:
+            diagnosis_id = request.POST.get('diagnosis')
+            diagnosis = None
+            if diagnosis_id:
+                diagnosis = Diagnosis.objects.get(id=diagnosis_id)
+
+
+            lab_test = LabTest.objects.create(
+                patient = patient,
+                diagnosis = diagnosis,
+                test_name = request.POST.get('test_name'),
+                category = request.POST.get('cayegory'),
+                urgency = request.POST.get('urgency', 'ROUTINE'),
+                instructions = request.POST.get('instructions', ''),
+                notes = request.POST.get('notes'),
+                ordered_by = request.user,
+                status = 'ORDERED'
+            )
+            messages.success(request, f'Lab test "{lab_test.tst_name}" ordered successfully and added to queue.')
+            return redirect('records:patient_detail', patient_id=patient.patient_id)
+        except Exception as e:
+            messages.error(request, f'Error ordering lab test: {str(e)}')
+
+    context = {
+        'patient': patient,
+        'diagnoses': diagnoses,
+        'category_choices': LabTest.CATEGORY_CHOICES,
+        'urgency_choices': LabTest.URGENCY_CHOICES,
+    }
+    return render(request, 'records/lab_test_create.html', context)
+
+
+@login_required
+@all_staff_required
+def lab_test_detail(request, test_id):
+    #Viewing lab test details and results(files in general)
+    lab_test = get_object_or_404(LabTest, id=test_id)
+    result = getattr(lab_test, 'result', None)
+    files = result.files.all() if result else []
+
+    can_upload = request.user.user_type in ['LAB', 'DOCTOR', 'ADMIN'] or request.user.is_superuser
+    can_interpret = request.user.user_type in ['DOCTOR', 'ADMIN'] or request.user.is_superuser
+    can_pickup = (
+        request.user.user_type == 'LAB' and 
+        lab_test.status == 'ORDERED' and 
+        lab_test.assigned_to is None
+    )
+    is_assigned_to_me = lab_test.assigned_to == request.user
+
+    context = {
+        'lab_test': lab_test,
+        'result': result,
+        'files': files,
+        'can_upload': can_upload,
+        'can_interpret': can_interpret,
+        'can_pickup': can_pickup,
+        'is_assigned_to_me': is_assigned_to_me,
+    }
+
+    return render(request, 'records/lab_test_detail.html')
+
+
+@login_required
+def lab_test_pickup(request, test_id):
+    #Lab personnel picks up test from general queue
+    if request.user.user_type != 'LAB' and not request.user.is_superuser:
+        messages.error(request, 'Only lab personnel can pickup tests from the queue')
+        return redirect('records:lab_test_list')
+
+    lab_test = get_object_or_404(LabTest, id=test_id)
+
+    if lab_test.assigned_to:
+        messages.warning(request, f'This test has already been picked up by {lab_test.assigned_to.get_full_name()}.')
+        return redirect('records:lab_test_detail', test_id=test_id)
+
+    if lab_test.status != 'ORDERED':
+        messages.warning(request, 'This test is not available for pickup.')
+        return redirect('records:lab_test_detail', test_id=test_id)
+
+    lab_test.assigned_to = request.user
+    lab_test.assigned_to = timezone.now()
+    lab_test.assigned_to = 'IN_PROGRESS'
+    lab_test.save()
+
+    messages.success(request, f'You have picked up "{lab_test.test_name}" for {lab_test.patient.get_full_name()}.')
+    return redirect('records:lab_test_detail', test_id=test_id)
+
+
+#Lab result views
+
+@login_required
+@lab_or_doctor_or_admin_required
+def lab_result_create(request, test_id):
+    #Lab personnel uploads files and enters results for lab test
+    lab_test = get_object_or_404(LabTest, id=test_id)
+
+    #Only the assigned lab personnel or any lab/doctor/admin can sbmit results
+    if hasattr(lab_test, 'result'):
+        messages.warning(request, 'Results have already been submitted for this test. You can add me files instead')
+        return redirect('records:lab_result_add_file', test_id=test_id)
+
+    if lab_test.status == 'CANCELLED':
+        messages.error(request, 'Cannot add results to a cancelled test.')
+        return redirect('records:lab_test_detail', test_id=test_id)
+    
+    if request.method == 'POST':
+        try:
+            result = LabResult.objects.create(
+                lab_test = lab_test,
+                result_date = request.POST.get('result_date'),
+                result_summary = request.POST.get('result_summary'),
+                lab_notes = request.POST.get('lab_notes'),
+                scan_notes = request.POST.get('scan_note'),
+                uploaded_by = request.user,
+            )
+
+            #adling file uploads
+            files = request.FILES.getlist('result_files')
+            file_types = request.POST.getlist('file_types')
+            file_descriptions = request.POST.getlist('file_descriptions')
+            file_notes_list = request.POST.getlist('file_notes')
+
+
+            for i, uploaded_file in enumerate(files):
+                LabResultFile.objects.create(
+                    lab_result= result,
+                    file = uploaded_file,
+                    file_type = file_types[i] if i < len(file_types) else 'OTHER',
+                    file_name = uploaded_file.name,
+                    description = file_descriptions[i] if i < len(file_descriptions) else '',
+                    file_notes = file_notes_list[i] if i < len(file_notes_list) else '',
+                    uploaded_by = request.user,
+                )
+            
+            #Now update test status to completed
+            lab_test.status = 'COMPLETED'
+            lab_test.save()
+
+            messages.success(request, 'Lab result submitted successfully. The ordering Doctor has been notified')
+            return redirect('records:lab_test_detail', test_id=test_id)
+        except Exception as e:
+            messages.error(request, f'Error submitting results: {str(e)}')
+
+    context = {
+        'lab_test': lab_test,
+        'file_type_choices': LabResultFile.FILE_TYPE_CHOICES,
+        'is_imaging': lab_test_category == 'IMAGING',
+    }
+    return render(request, 'records/lab_result_create.html', context)
