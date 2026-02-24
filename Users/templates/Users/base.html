@@ -104,6 +104,9 @@
                 {% if user.user_type in 'DOCTOR,NURSE,ADMIN' %}
                 <a href="{% url 'records:patient_list' %}">Patients</a>
                 {% endif %}
+                {% if user.user_type in 'DOCTOR,NURSE,ADMIN,LAB' %}
+                <a href="{% url 'records:lab_test_list' %}">Lab Tests</a>
+                {% endif %}
                 <a href="{% url 'profile' %}">Profile</a>
                 <a href="{% url 'logout' %}">Logout ({{ user.username }})</a>
             {% else %}

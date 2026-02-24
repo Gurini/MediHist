@@ -223,3 +223,80 @@ def lab_result_create(request, test_id):
         'is_imaging': lab_test_category == 'IMAGING',
     }
     return render(request, 'records/lab_result_create.html', context)
+
+
+@login_required
+@lab_or_doctor_or_admin_required
+def lab_result_add_file(request, test_id):
+    #Additional files to an already existent lab result
+
+    lab_test = het_object_or_404(LabTest, id=test_id)
+    result = getattr(lab_test, 'result', None)
+
+    if not result:
+        messages.error(request, 'No results found. Please submit results first')
+        return redirect('records:lab_result_create', test_id=test_id)
+
+    if requestmethod == 'POST':
+        try:
+            files = request.FILES.getlist('result_files')
+            file_types = request.POST.getlist('file_types')
+            file_descriptions = request.POST.getlist('file_descriptions')
+            file_note_list = request.POST.getlist('file_notes')
+
+            for i, uploaded_file in enumerate(files):
+                LabResultFile.objects.create(
+                    lab_result = result,
+                    file = upload_file,
+                    file_type = file_types[i] if i < len(file_types) else 'OTHER',
+                    file_name = uploaded_file.name,
+                    description = file_descriptions[i] if i < len(file_descriptions) else '',
+                    file_notes = file_notes_list[i] if i < len(file_notes_list) else '',
+                    uploaded_by = request.user,
+                )
+
+            messages.success(request, f'{len(files)} file(s) added successfully.')
+            return redirect('records:lab_test_detail', test_id=test_id)
+        except Exception as e:
+            messages.error(request, f'Error uploading files: {str(e)}')
+
+    context = {
+        'lab_test': lab_test,
+        'result': result,
+        'file_type_choices': LabResultFile.FILE_TYPE_CHOICES,
+    }
+    return render(request, 'records/lab_result_add_file.html', context)
+
+
+@login_required
+@doctor_or_admin_required
+def lab_result_interpret(request, test_id):
+    #Doctor adds interpretation and flags abnormal results
+    lab_test = get_object_or_404(LabTest, id=test_id)
+    result = get_object_or_404(LabResult, lab_test=lab_test)
+
+    if request.method == 'POST':
+        try:
+            result.is_abnormal = request.POST.get('is_abnormal') == 'on'
+            result.interpretation = request.POST.get('interpretation', '')
+            result.interpreted_by = request.user
+            result.interpreted_at = timezone.now()
+            resulu.save()
+
+            #Update the test status now to REVIEWED
+            lab_test.status = 'REVIEWED'
+            lab_test.save()
+
+            status = '⚠️ ABNORMAL -' if result.is_abnormal else ''
+            messages.success(request, f'Results {status}reviewed and saved successfully.')
+            return redirect('records:lab_test_detail', test_id=test_id)
+        except Exception as e:
+            messages.error(request, f'Error saving interpretation: {str(e)}')
+
+        
+    context = {
+        'lab_test': lab_test,
+        'result': result,
+    }
+
+    return render(request, 'records/lab_result_interpret.html', context)

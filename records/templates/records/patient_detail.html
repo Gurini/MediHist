@@ -68,6 +68,10 @@
            style="padding: 0.75rem 1.5rem; background: #27ae60; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
             + Add Prescription
         </a>
+        <a href="{% url 'records:lab_test_create' patient.patient_id %}" 
+           style="padding: 0.75rem 1.5rem; background: #8e44ad; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            🔬 Order Lab Test
+        </a>
     </div>
     {% endif %}
     
@@ -160,57 +164,33 @@
         {% endif %}
     </div>
     
-    <!-- Prescriptions Section -->
+    <!-- Lab Tests Section -->
     <div style="margin-bottom: 2rem;">
-        <h3 style="color: #27ae60; margin-bottom: 1rem;">💊 Prescriptions</h3>
-        {% if prescriptions %}
-            {% for prescription in prescriptions %}
-            <div style="background: #d5f4e6; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #27ae60;">
-                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+        <h3 style="color: #8e44ad; margin-bottom: 1rem;">🔬 Lab Tests</h3>
+        {% if patient.lab_tests.all %}
+            {% for test in patient.lab_tests.all %}
+            <div style="background: #f3e5f5; padding: 1.25rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #8e44ad;">
+                <div style="display:flex; justify-content:space-between; align-items:start;">
                     <div>
-                        <p style="margin: 0; font-weight: bold; font-size: 1.1rem; color: #27ae60;">{{ prescription.medication_name }}</p>
-                        <p style="margin: 0.25rem 0 0 0; color: #7f8c8d; font-size: 0.9rem;">{{ prescription.prescription_date }} | Prescribed by: {{ prescription.prescribed_by.get_full_name|default:prescription.prescribed_by.username }}</p>
+                        <p style="margin:0; font-weight:bold; font-size:1.05rem; color:#6a1b9a;">{{ test.test_name }}</p>
+                        <p style="margin:0.25rem 0; color:#7f8c8d; font-size:0.9rem;">{{ test.get_category_display }} | Ordered: {{ test.ordered_date|date:"M d, Y" }}</p>
                     </div>
-                    <span style="padding: 0.25rem 0.75rem; background: 
-                        {% if prescription.status == 'ACTIVE' %}#27ae60
-                        {% elif prescription.status == 'COMPLETED' %}#95a5a6
-                        {% elif prescription.status == 'DISCONTINUED' %}#e74c3c
-                        {% else %}#f39c12{% endif %}; 
-                        color: white; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">
-                        {{ prescription.get_status_display }}
-                    </span>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem;">
-                    <div>
-                        <p style="margin: 0; color: #7f8c8d; font-size: 0.85rem;">Dosage</p>
-                        <p style="margin: 0.25rem 0 0 0; font-weight: bold;">{{ prescription.dosage }}</p>
-                    </div>
-                    <div>
-                        <p style="margin: 0; color: #7f8c8d; font-size: 0.85rem;">Frequency</p>
-                        <p style="margin: 0.25rem 0 0 0; font-weight: bold;">{{ prescription.get_frequency_display }}</p>
-                    </div>
-                    <div>
-                        <p style="margin: 0; color: #7f8c8d; font-size: 0.85rem;">Route</p>
-                        <p style="margin: 0.25rem 0 0 0; font-weight: bold;">{{ prescription.route }}</p>
-                    </div>
-                    <div>
-                        <p style="margin: 0; color: #7f8c8d; font-size: 0.85rem;">Duration</p>
-                        <p style="margin: 0.25rem 0 0 0; font-weight: bold;">{{ prescription.duration }}</p>
+                    <div style="display:flex; gap:0.5rem; align-items:center;">
+                        {% if test.result and test.result.is_abnormal %}
+                        <span style="padding:0.2rem 0.6rem; background:#e74c3c; color:white; border-radius:4px; font-size:0.8rem; font-weight:bold;">⚠️ ABNORMAL</span>
+                        {% endif %}
+                        <span style="padding:0.2rem 0.75rem; background:{{ test.get_status_color }}; color:white; border-radius:4px; font-size:0.85rem; font-weight:bold;">{{ test.get_status_display }}</span>
+                        <a href="{% url 'records:lab_test_detail' test.id %}"
+                           style="padding:0.3rem 0.75rem; background:#8e44ad; color:white; text-decoration:none; border-radius:4px; font-size:0.85rem;">View</a>
                     </div>
                 </div>
-                
-                <p style="margin: 1rem 0 0 0; padding-top: 1rem; border-top: 1px solid #bdc3c7;"><strong>Instructions:</strong> {{ prescription.instructions }}</p>
-                
-                {% if prescription.special_instructions %}
-                <div style="margin-top: 0.5rem; padding: 0.75rem; background: #fff3cd; border-radius: 4px;">
-                    <p style="margin: 0; color: #856404;"><strong>⚠️ Special Instructions:</strong> {{ prescription.special_instructions }}</p>
-                </div>
+                {% if test.instructions %}
+                <p style="margin:0.5rem 0 0 0; font-size:0.9rem; color:#555;"><strong>Instructions:</strong> {{ test.instructions }}</p>
                 {% endif %}
             </div>
             {% endfor %}
         {% else %}
-            <p style="color: #7f8c8d; font-style: italic;">No prescriptions recorded yet.</p>
+            <p style="color:#7f8c8d; font-style:italic;">No lab tests ordered yet.</p>
         {% endif %}
     </div>
 </div>

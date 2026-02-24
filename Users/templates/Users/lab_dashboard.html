@@ -1,0 +1,131 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Lab Dashboard - Medihist{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="color:#8e44ad; margin-bottom:0.5rem;">🔬 {{ user.get_full_name|default:user.username }}</h2>
+    <p style="color:#7f8c8d; margin-bottom:2rem;">
+        Lab Personnel | {{ profile.get_lab_department_display }}
+    </p>
+
+    <!-- Quick Actions -->
+    <div style="display:flex; gap:1rem; margin-bottom:2rem; flex-wrap:wrap;">
+        <a href="{% url 'records:lab_test_list' %}"
+           style="padding:0.75rem 1.5rem; background:#8e44ad; color:white; text-decoration:none; border-radius:4px; font-weight:bold;">
+            📋 View All Lab Tests
+        </a>
+        <a href="{% url 'records:lab_test_list' %}?status=ORDERED"
+           style="padding:0.75rem 1.5rem; background:#f39c12; color:white; text-decoration:none; border-radius:4px; font-weight:bold;">
+            ⏳ View Queue
+        </a>
+        <a href="{% url 'records:lab_test_list' %}?queue=mine"
+           style="padding:0.75rem 1.5rem; background:#3498db; color:white; text-decoration:none; border-radius:4px; font-weight:bold;">
+            📌 My Assigned Tests
+        </a>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:1rem; margin-bottom:2rem;">
+        <div style="background:#f3e5f5; padding:1.5rem; border-radius:8px; text-align:center;">
+            <h3 style="color:#f39c12; font-size:2.2rem; margin-bottom:0.5rem;">{{ queue_count|default:0 }}</h3>
+            <p style="color:#555; font-weight:bold;">In Queue</p>
+        </div>
+        <div style="background:#f3e5f5; padding:1.5rem; border-radius:8px; text-align:center;">
+            <h3 style="color:#3498db; font-size:2.2rem; margin-bottom:0.5rem;">{{ my_in_progress|default:0 }}</h3>
+            <p style="color:#555; font-weight:bold;">My In Progress</p>
+        </div>
+        <div style="background:#f3e5f5; padding:1.5rem; border-radius:8px; text-align:center;">
+            <h3 style="color:#27ae60; font-size:2.2rem; margin-bottom:0.5rem;">{{ my_completed|default:0 }}</h3>
+            <p style="color:#555; font-weight:bold;">My Completed</p>
+        </div>
+        <div style="background:#f3e5f5; padding:1.5rem; border-radius:8px; text-align:center;">
+            <h3 style="color:#8e44ad; font-size:2.2rem; margin-bottom:0.5rem;">{{ profile.years_of_experience }}</h3>
+            <p style="color:#555; font-weight:bold;">Years Experience</p>
+        </div>
+    </div>
+
+    <!-- Active Queue -->
+    {% if queue_tests %}
+    <div style="background:#fff8e1; padding:1.5rem; border-radius:8px; margin-bottom:1.5rem; border-left:4px solid #f39c12;">
+        <h3 style="color:#f57c00; margin:0 0 1rem 0;">⏳ Tests Awaiting Pickup</h3>
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="background:#fff3e0;">
+                    <th style="padding:0.6rem; text-align:left; border-bottom:1px solid #ffe082;">Patient</th>
+                    <th style="padding:0.6rem; text-align:left; border-bottom:1px solid #ffe082;">Test</th>
+                    <th style="padding:0.6rem; text-align:left; border-bottom:1px solid #ffe082;">Category</th>
+                    <th style="padding:0.6rem; text-align:left; border-bottom:1px solid #ffe082;">Urgency</th>
+                    <th style="padding:0.6rem; text-align:left; border-bottom:1px solid #ffe082;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for test in queue_tests %}
+                <tr style="border-bottom:1px solid #fff3e0;">
+                    <td style="padding:0.6rem;">{{ test.patient.get_full_name }}</td>
+                    <td style="padding:0.6rem; font-weight:bold;">{{ test.test_name }}</td>
+                    <td style="padding:0.6rem; font-size:0.9rem;">{{ test.get_category_display }}</td>
+                    <td style="padding:0.6rem;">
+                        <span style="padding:0.2rem 0.6rem; border-radius:4px; font-size:0.85rem; font-weight:bold;
+                            background:{% if test.urgency == 'STAT' %}#e74c3c{% elif test.urgency == 'URGENT' %}#f39c12{% else %}#27ae60{% endif %}; color:white;">
+                            {{ test.get_urgency_display }}
+                        </span>
+                    </td>
+                    <td style="padding:0.6rem;">
+                        <a href="{% url 'records:lab_test_pickup' test.id %}"
+                           style="padding:0.3rem 0.75rem; background:#27ae60; color:white; text-decoration:none; border-radius:4px; font-size:0.85rem; font-weight:bold;">
+                            ✋ Pick Up
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- My In-Progress Tests -->
+    {% if my_tests_in_progress %}
+    <div style="background:#e3f2fd; padding:1.5rem; border-radius:8px; border-left:4px solid #3498db;">
+        <h3 style="color:#1565c0; margin:0 0 1rem 0;">🔵 My In-Progress Tests</h3>
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="background:#e1f5fe;">
+                    <th style="padding:0.6rem; text-align:left; border-bottom:1px solid #b3e5fc;">Patient</th>
+                    <th style="padding:0.6rem; text-align:left; border-bottom:1px solid #b3e5fc;">Test</th>
+                    <th style="padding:0.6rem; text-align:left; border-bottom:1px solid #b3e5fc;">Ordered</th>
+                    <th style="padding:0.6rem; text-align:left; border-bottom:1px solid #b3e5fc;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for test in my_tests_in_progress %}
+                <tr style="border-bottom:1px solid #e1f5fe;">
+                    <td style="padding:0.6rem;">{{ test.patient.get_full_name }}</td>
+                    <td style="padding:0.6rem; font-weight:bold;">{{ test.test_name }}</td>
+                    <td style="padding:0.6rem; font-size:0.9rem;">{{ test.ordered_date|date:"M d, Y" }}</td>
+                    <td style="padding:0.6rem;">
+                        <a href="{% url 'records:lab_result_create' test.id %}"
+                           style="padding:0.3rem 0.75rem; background:#3498db; color:white; text-decoration:none; border-radius:4px; font-size:0.85rem;">
+                            Submit Results
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Profile Info -->
+    <div style="background:#ecf0f1; padding:1.25rem; border-radius:8px; margin-top:1.5rem;">
+        <h3 style="color:#34495e; margin:0 0 0.75rem 0;">Profile Information</h3>
+        <p style="margin:0.3rem 0;"><strong>Department:</strong> {{ profile.get_lab_department_display }}</p>
+        {% if profile.qualification %}
+        <p style="margin:0.3rem 0;"><strong>Qualification:</strong> {{ profile.qualification }}</p>
+        {% endif %}
+        <p style="margin:0.3rem 0;"><strong>Status:</strong>
+            {% if profile.is_available %}<span style="color:#27ae60;">Available</span>{% else %}<span style="color:#e74c3c;">Not Available</span>{% endif %}
+        </p>
+    </div>
+</div>
+{% endblock %}
