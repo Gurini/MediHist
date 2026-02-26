@@ -116,7 +116,7 @@ class AdminProfileAdmin(admin.ModelAdmin):
         return False
 
 
-@admin.register(AdminProfile)
+@admin.register(LabProfile)
 class LabProfileAdmin(admin.ModelAdmin):
     list_display = ['user', 'employee_id', 'lab_department', 'years_of_experience', 'is_available']
     list_filter = ['lab_department', 'is_available']

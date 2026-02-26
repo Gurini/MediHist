@@ -147,7 +147,7 @@ class LabProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='lab_profile')
     employee_id = models.CharField(max_length=50, unique=True, blank=True, default='')
     lab_department = models.CharField(max_length=50, choices=LAB_DEPARTMENT_CHOICES, blank=True, default='OTHER')     
-    qualification = modelsCharField(max_length=100, blank=True, default='')
+    qualification = models.CharField(max_length=100, blank=True, default='')
     years_of_experience = models.PositiveIntegerField(default=0)
     is_available = models.BooleanField(default='True')
 
@@ -157,5 +157,5 @@ class LabProfile(models.Model):
 
     def __str__(self):
         return f"Lab: {self.user.get_full_name()} - {self.get_lab_department_display()}"
-        
+
     

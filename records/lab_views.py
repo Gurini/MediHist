@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q
-from django.core.paignator import Paginator
+from django.core.paginator import Paginator
 from .models import Patient, Diagnosis, LabTest, LabResult, LabResultFile
 from .decorators import (
     admin_required, doctor_or_admin_required, all_staff_required,
@@ -19,8 +19,8 @@ def lab_test_list(request):
     #Meanwhile lab personnel see queue and their assigned tests
 
     status_filter = request.GET.get('status', '')
-    categoty_filter = request.GET.get('category', '')
-    uery = request.GET.get('Q', '')
+    category_filter = request.GET.get('category', '')
+    query = request.GET.get('Q', '')
     show_queue = request.GET.get('Q', '')
 
     tests = LabTest.objects.select_related('patient', 'ordered_by', 'assigned_to').all()
@@ -35,42 +35,42 @@ def lab_test_list(request):
                 Q(assigned_to=request.user) | Q(assigned_to__isnull=True, status='ORDERED')
             )
 
-        if status_filter:
-            tests = tests.filter(status=status_filter)
-        if category_filter:
-            tests = tests.filter(category=category_filter)
-        if query:
-            tests = tests.filter(
-                Q(patient__first_name__icontains=query) |
-                Q(patient__last_name__icontains=query) |
-                Q(patient__patient_id__icontains=query) |
-                Q(test_name__icontains=query) 
-            )
+    if status_filter:
+        tests = tests.filter(status=status_filter)
+    if category_filter:
+        tests = tests.filter(category=category_filter)
+    if query:
+        tests = tests.filter(
+            Q(patient__first_name__icontains=query) |
+            Q(patient__last_name__icontains=query) |
+            Q(patient__patient_id__icontains=query) |
+            Q(test_name__icontains=query) 
+        )
 
-        paginator = Paginator(tests, 20)
-        page_number = request.GET.get('page')
-        tests_page = pagiantor.get.get_page(page_number)
+    paginator = Paginator(tests, 20)
+    page_number = request.GET.get('page')
+    tests_page = paginator.get_page(page_number)
 
-        #Queue count om lab personnel dashboard
-        queue_count = LabTest.objects.filter(status='ORDERED', assigned_to__isnull=True).count()
+    #Queue count om lab personnel dashboard
+    queue_count = LabTest.objects.filter(status='ORDERED', assigned_to__isnull=True).count()
 
-        context = {
-            'tests': tests_page,
-            'status_filter': status_filter,
-            'category_filter': category_filter,
-            'query': query,
-            'queue_count': queue_count,
-            'status_choices': LabTest.STATUS_CHOICES,
-            'category_choices': LabTest.CATEGORY_CHOICES,
-        }
-        return render(request, 'records/lab_test_list.html', context)
+    context = {
+        'tests': tests_page,
+        'status_filter': status_filter,
+        'category_filter': category_filter,
+        'query': query,
+        'queue_count': queue_count,
+        'status_choices': LabTest.STATUS_CHOICES,
+        'category_choices': LabTest.CATEGORY_CHOICES,
+    }
+    return render(request, 'records/lab_test_list.html', context)
 
 
 @login_required
 @doctor_or_admin_required
 def lab_test_create(request, patient_id):
     #Order a new lab test(for doctors and admin only)
-    patient = get_object_or_404(PAtient, patient_id=patient_id)
+    patient = get_object_or_404(Patient, patient_id=patient_id)
     diagnoses = patient.diagnoses.filter(status__in=['ACTIVE', 'CHRONIC', 'UNDER_OBSERVATION'])
 
     if request.method == 'POST':
@@ -85,14 +85,14 @@ def lab_test_create(request, patient_id):
                 patient = patient,
                 diagnosis = diagnosis,
                 test_name = request.POST.get('test_name'),
-                category = request.POST.get('cayegory'),
+                category = request.POST.get('category'),
                 urgency = request.POST.get('urgency', 'ROUTINE'),
                 instructions = request.POST.get('instructions', ''),
                 notes = request.POST.get('notes'),
                 ordered_by = request.user,
                 status = 'ORDERED'
             )
-            messages.success(request, f'Lab test "{lab_test.tst_name}" ordered successfully and added to queue.')
+            messages.success(request, f'Lab test "{lab_test.test_name}" ordered successfully and added to queue.')
             return redirect('records:patient_detail', patient_id=patient.patient_id)
         except Exception as e:
             messages.error(request, f'Error ordering lab test: {str(e)}')
@@ -133,7 +133,7 @@ def lab_test_detail(request, test_id):
         'is_assigned_to_me': is_assigned_to_me,
     }
 
-    return render(request, 'records/lab_test_detail.html')
+    return render(request, 'records/lab_test_detail.html', context)
 
 
 @login_required

@@ -279,7 +279,7 @@ def validate_file_size(value):
 
 class LabTest(models.Model):
     #Labb test order - created by doctor & goes into a general queue for lab personnel to pick up
-    CATEGORY_CHOICE = (
+    CATEGORY_CHOICES = (
         ('BLOOD', 'Blood'),
         ('IMAGING', 'Imaging (X-Ray, CT, MRI, Ultrasound)'),
         ('URINE', 'Urine Test'),
@@ -305,7 +305,7 @@ class LabTest(models.Model):
 
     #critical info
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='lab_tests')
-    diagnosis = models.ForeignKey(Diagmosis, on_delete=models.SET_NULL, null=True, blank=True, related_name='lab_tests')
+    diagnosis = models.ForeignKey(Diagnosis, on_delete=models.SET_NULL, null=True, blank=True, related_name='lab_tests')
     test_name = models.CharField(max_length=200)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     urgency = models.CharField(max_length=10, choices=URGENCY_CHOICES, default='ROUTINE')
@@ -326,7 +326,7 @@ class LabTest(models.Model):
     ordered_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='lab_tests_ordered')
     ordered_date = models.DateTimeField(auto_now_add=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_add_now=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'Lab Test'
@@ -376,7 +376,7 @@ class LabResult(models.Model):
 
     # system fields
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='lab_results_uploaded')
-    created_at = models.DateTimeField(auto_add_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -398,7 +398,7 @@ class LabResultFile(models.Model):
         ('OTHER', 'Other'),
     )
 
-    lab_result = models.Foreign(LabResult, on_delete=models.CASCADE, related_name='files')
+    lab_result = models.ForeignKey(LabResult, on_delete=models.CASCADE, related_name='files')
     file = models.FileField(upload_to=lab_result_file_path, validators=[validate_file_size])
     file_type = models.CharField(max_length=10, choices=FILE_TYPE_CHOICES)
     file_name = models.CharField(max_length=250, blank=True, help_text='Descriptive file for the file')
@@ -408,7 +408,7 @@ class LabResultFile(models.Model):
     file_notes = models.TextField(blank=True, help_text='Specific observation or notes about this file/scan')
 
     #system fields
-    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='lab_files-uploaded')
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='lab_files_uploaded')
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -416,12 +416,12 @@ class LabResultFile(models.Model):
         verbose_name_plural = 'Lab Result Files'
         ordering = ['-uploaded_at']
 
-        def __str__(self):
-            return f"{self.file_name or self.file.name} - ({self.get_file_type_display()})"
+    def __str__(self):
+        return f"{self.file_name or self.file.name} - ({self.get_file_type_display()})"
 
-        def get_file_size_mb(self):
-            #to get file size in mb
-            try:
-                return round(self.file.size / (1024 * 1024), 2)
-            except Exception:
-                return 0
+    def get_file_size_mb(self):
+        #to get file size in mb
+        try:
+            return round(self.file.size / (1024 * 1024), 2)
+        except Exception:
+            return 0
